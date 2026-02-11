@@ -1,4 +1,3 @@
-[index (2).html](https://github.com/user-attachments/files/25222775/index.2.html)
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,1545 +7,769 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SwingIQ">
     <title>SwingIQ</title>
-
-    <!-- TensorFlow.js + MoveNet for pose detection -->
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.17.0/dist/tf.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
-
-    <!-- Chart.js for progress charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-
-    <!-- Marked.js for rendering Claude's markdown coaching text -->
     <script src="https://cdn.jsdelivr.net/npm/marked@12.0.0/marked.min.js"></script>
-
     <style>
         @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,500;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@400;600&display=swap');
+        :root{--bg:#0a0c0f;--s1:rgba(255,255,255,0.04);--s2:rgba(255,255,255,0.08);--brd:rgba(255,255,255,0.07);--g:#34d399;--gd:rgba(52,211,153,0.12);--y:#fbbf24;--yd:rgba(251,191,36,0.12);--r:#f87171;--rd:rgba(248,113,113,0.12);--t:#d1d5db;--td:#6b7280;--tb:#f9fafb;--blue:#60a5fa;--purple:#a78bfa;--mono:'JetBrains Mono',monospace}
+        *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+        body{font-family:'DM Sans',-apple-system,sans-serif;background:var(--bg);color:var(--t);min-height:100dvh;overflow-x:hidden}
+        .hidden{display:none!important}
+        .fade{animation:fade .4s ease}@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1}}
+        .pulse{animation:pls 2s ease-in-out infinite}@keyframes pls{0%,100%{opacity:1}50%{opacity:.4}}
+        input,select,textarea{font-family:'DM Sans';background:rgba(0,0,0,.5);border:1px solid var(--brd);border-radius:12px;padding:12px 16px;color:var(--tb);font-size:16px;width:100%;outline:none}
+        input:focus,select:focus{border-color:var(--g)}select{-webkit-appearance:none}
+        .btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:none;border-radius:14px;font-family:'DM Sans';font-size:16px;font-weight:700;cursor:pointer;transition:all .15s}
+        .btn-g{background:var(--g);color:#000}.btn-g:disabled{background:#1a1f2e;color:#4b5563;cursor:not-allowed}
+        .btn-o{background:transparent;color:var(--td);border:1px solid var(--brd)}
+        .btn-s{padding:8px 14px;font-size:13px;width:auto;border-radius:10px}
+        .btn-r{background:var(--rd);color:var(--r);border:1px solid rgba(248,113,113,.15)}
 
-        :root {
-            --bg: #06080a;
-            --surface: rgba(255,255,255,0.04);
-            --surface-hover: rgba(255,255,255,0.08);
-            --border: rgba(255,255,255,0.08);
-            --green: #34d399;
-            --green-dim: rgba(52,211,153,0.15);
-            --yellow: #fbbf24;
-            --yellow-dim: rgba(251,191,36,0.15);
-            --red: #f87171;
-            --red-dim: rgba(248,113,113,0.15);
-            --text: #e5e7eb;
-            --text-dim: #6b7280;
-            --text-bright: #f9fafb;
-            --mono: 'JetBrains Mono', monospace;
-        }
+        /* Layout */
+        .hdr{position:sticky;top:0;z-index:50;padding:12px 16px;background:rgba(10,12,15,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--brd)}
+        .hdr-in{max-width:480px;margin:0 auto;display:flex;align-items:center;justify-content:space-between}
+        .logo{font-weight:700;font-size:17px;color:var(--tb)}
+        .tabs{display:flex;gap:2px}.tab{padding:6px 14px;border-radius:8px;font-size:13px;font-weight:500;color:var(--td);cursor:pointer;border:none;background:none}.tab.on{background:var(--gd);color:var(--g)}
+        .wrap{padding:0 16px;max-width:480px;margin:0 auto;width:100%}
+        .card{background:var(--s1);border:1px solid var(--brd);border-radius:16px;padding:20px;margin-bottom:12px}
+        .lbl{font-size:11px;color:var(--td);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
 
-        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        /* Upload */
+        .uzone{border:2px dashed rgba(255,255,255,.1);border-radius:16px;padding:36px 20px;text-align:center;cursor:pointer;transition:all .2s}
+        .uzone:active{border-color:var(--g);background:var(--gd)}
 
-        body {
-            font-family: 'DM Sans', -apple-system, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100dvh;
-            overflow-x: hidden;
-        }
+        /* Verdict badges */
+        .verdict{display:inline-flex;align-items:center;gap:6px;padding:6px 12px;border-radius:20px;font-size:13px;font-weight:600;margin:3px}
+        .v-good{background:var(--gd);color:var(--g)}.v-warn{background:var(--yd);color:var(--y)}.v-bad{background:var(--rd);color:var(--r)}
 
-        /* --- Utility --- */
-        .glass { background: var(--surface); border: 1px solid var(--border); }
-        .glass:hover { background: var(--surface-hover); }
-        .mono { font-family: var(--mono); }
-        .fade-in { animation: fadeIn 0.4s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
-        .pulse { animation: pulse 2s ease-in-out infinite; }
-        @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        /* Swing cards */
+        .sw-card{display:flex;align-items:center;gap:12px;padding:12px;border-radius:14px;background:var(--s1);border:1px solid var(--brd);margin-bottom:8px}
+        .sw-card img{width:65px;height:85px;object-fit:cover;border-radius:8px;flex-shrink:0;cursor:pointer}
+        .sw-info{flex:1;min-width:0}.sw-acts{display:flex;gap:6px;flex-shrink:0}
 
-        /* --- Layout --- */
-        .screen { min-height: 100dvh; display: flex; flex-direction: column; }
-        .container { padding: 0 16px; max-width: 480px; margin: 0 auto; width: 100%; }
-        .hidden { display: none !important; }
+        /* Position thumbs */
+        .pos-row{display:flex;gap:10px;overflow-x:auto;padding-bottom:4px}
+        .pos-th{flex-shrink:0;width:100px;border-radius:12px;overflow:hidden;border:2px solid transparent;cursor:pointer}.pos-th.on{border-color:var(--g)}
+        .pos-th img{width:100%;height:130px;object-fit:cover;display:block}
+        .pos-th-i{padding:6px 8px;background:rgba(0,0,0,.6);font-size:11px}
 
-        /* --- Login --- */
-        .login-screen {
-            min-height: 100dvh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 24px;
-            background: radial-gradient(ellipse at 50% 0%, rgba(52,211,153,0.06) 0%, transparent 60%);
-        }
-        .login-card {
-            width: 100%;
-            max-width: 360px;
-            text-align: center;
-        }
-        .login-logo {
-            font-size: 48px;
-            margin-bottom: 8px;
-            filter: drop-shadow(0 0 20px rgba(52,211,153,0.3));
-        }
-        .login-title {
-            font-size: 28px;
-            font-weight: 700;
-            letter-spacing: -0.5px;
-            color: var(--text-bright);
-        }
-        .login-sub { color: var(--text-dim); font-size: 14px; margin-top: 4px; margin-bottom: 32px; }
+        /* Coaching */
+        .coach h2{font-size:16px;font-weight:700;margin:18px 0 8px;color:var(--g)}
+        .coach h3{font-size:14px;font-weight:600;margin-top:12px;color:var(--tb)}
+        .coach p{margin:6px 0;line-height:1.55;font-size:14px}.coach strong{color:var(--tb)}
+        .coach ul,.coach ol{padding-left:18px;margin:6px 0}.coach li{margin:4px 0;font-size:14px;line-height:1.5}
 
-        /* --- Inputs --- */
-        input, select, textarea {
-            font-family: 'DM Sans', sans-serif;
-            background: rgba(0,0,0,0.4);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 12px 16px;
-            color: var(--text-bright);
-            font-size: 16px; /* prevents zoom on iOS */
-            width: 100%;
-            outline: none;
-            transition: border-color 0.2s;
-        }
-        input:focus, select:focus, textarea:focus { border-color: var(--green); }
-        input::placeholder, textarea::placeholder { color: var(--text-dim); }
-        select { -webkit-appearance: none; appearance: none; cursor: pointer; }
-        input[type="number"] { -moz-appearance: textfield; }
-        input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; }
+        /* Launch grid */
+        .lm-g{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+        .lm-f label{display:block;font-size:11px;color:var(--td);margin-bottom:4px}
+        .lm-f input{padding:10px 12px;font-size:14px;border-radius:10px}
 
-        /* --- Buttons --- */
-        .btn {
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            width: 100%; padding: 14px 20px;
-            border: none; border-radius: 14px;
-            font-family: 'DM Sans', sans-serif;
-            font-size: 16px; font-weight: 700;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .btn-primary { background: var(--green); color: #000; }
-        .btn-primary:hover { background: #4ade9d; transform: translateY(-1px); }
-        .btn-primary:disabled { background: #1f2937; color: #4b5563; cursor: not-allowed; transform: none; }
-        .btn-ghost { background: transparent; color: var(--text-dim); border: 1px solid var(--border); }
+        /* Overlay */
+        .overlay{position:fixed;inset:0;z-index:100;background:rgba(10,12,15,.96);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;padding:40px;text-align:center}
+        .pbar{width:100%;max-width:260px;height:4px;background:#1f2937;border-radius:2px;overflow:hidden}
+        .pfill{height:100%;background:var(--g);border-radius:2px;transition:width .5s}
 
-        /* --- Header --- */
-        .header {
-            position: sticky; top: 0; z-index: 50;
-            padding: 12px 16px;
-            background: rgba(6,8,10,0.85);
-            backdrop-filter: blur(20px);
-            border-bottom: 1px solid var(--border);
-        }
-        .header-inner { max-width: 480px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; }
-        .logo { display: flex; align-items: center; gap: 8px; font-weight: 700; font-size: 17px; color: var(--text-bright); }
-        .tabs { display: flex; gap: 2px; }
-        .tab {
-            padding: 6px 14px; border-radius: 8px;
-            font-size: 13px; font-weight: 500;
-            color: var(--text-dim);
-            cursor: pointer; transition: all 0.2s;
-            border: none; background: none;
-        }
-        .tab.active { background: var(--green-dim); color: var(--green); }
+        /* Voice toggle */
+        .vtog{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:600;cursor:pointer}
+        .von{background:var(--gd);color:var(--g)}.voff{background:var(--s1);color:var(--td)}
 
-        /* --- Cards --- */
-        .card {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 20px;
-        }
-        .card-label { font-size: 12px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 12px; }
+        /* Camera controls */
+        .cam-ctrl{position:absolute;top:10px;right:10px;display:flex;gap:6px;z-index:10}
+        .cam-btn{width:36px;height:36px;border-radius:50%;background:rgba(0,0,0,.6);border:none;color:#fff;font-size:16px;cursor:pointer;backdrop-filter:blur(8px)}
 
-        /* --- Score Ring --- */
-        .score-ring { position: relative; width: 110px; height: 110px; flex-shrink: 0; }
-        .score-ring svg { transform: rotate(-90deg); width: 100%; height: 100%; }
-        .score-ring .ring-value {
-            position: absolute; inset: 0;
-            display: flex; align-items: center; justify-content: center; flex-direction: column;
-        }
-        .score-number { font-family: var(--mono); font-size: 32px; font-weight: 700; line-height: 1; }
-        .score-label { font-size: 11px; color: var(--text-dim); margin-top: 2px; }
+        /* Live container */
+        .live-wrap{position:relative;border-radius:14px;overflow:hidden;background:#111}
 
-        /* --- Upload Area --- */
-        .upload-zone {
-            border: 2px dashed rgba(255,255,255,0.12);
-            border-radius: 16px;
-            padding: 40px 20px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
-        }
-        .upload-zone:hover, .upload-zone:active { border-color: var(--green); background: var(--green-dim); }
-        .upload-icon { font-size: 36px; margin-bottom: 8px; }
-        .upload-text { font-weight: 500; color: var(--text); font-size: 15px; }
-        .upload-hint { font-size: 12px; color: var(--text-dim); margin-top: 4px; }
+        .mono{font-family:var(--mono)}
+        .processing-canvas{display:none}
 
-        /* --- Position Carousel --- */
-        .position-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 4px; }
-        .position-thumb {
-            flex-shrink: 0; width: 100px;
-            border-radius: 12px; overflow: hidden;
-            border: 2px solid transparent;
-            cursor: pointer; transition: border-color 0.2s;
-        }
-        .position-thumb.active, .position-thumb:hover { border-color: var(--green); }
-        .position-thumb img { width: 100%; height: 130px; object-fit: cover; display: block; }
-        .position-thumb-info { padding: 6px 8px; background: rgba(0,0,0,0.6); }
-        .position-thumb-name { font-size: 11px; font-weight: 500; }
-        .position-thumb-score { font-size: 11px; font-family: var(--mono); }
-
-        /* --- Coaching Text --- */
-        .coaching h2 { font-size: 16px; font-weight: 700; margin-top: 20px; margin-bottom: 8px; color: var(--green); }
-        .coaching h3 { font-size: 14px; font-weight: 600; margin-top: 14px; color: var(--text-bright); }
-        .coaching p { margin: 6px 0; line-height: 1.55; font-size: 14px; }
-        .coaching strong { color: var(--text-bright); }
-        .coaching ul, .coaching ol { padding-left: 18px; margin: 6px 0; }
-        .coaching li { margin: 4px 0; font-size: 14px; line-height: 1.5; }
-
-        /* --- Launch Data Grid --- */
-        .lm-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .lm-field label { display: block; font-size: 11px; color: var(--text-dim); margin-bottom: 4px; }
-        .lm-field input { padding: 10px 12px; font-size: 14px; border-radius: 10px; }
-
-        /* --- History Item --- */
-        .history-item {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 16px;
-            cursor: pointer;
-        }
-        .history-club { font-weight: 600; font-size: 15px; }
-        .history-date { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
-        .history-score { font-family: var(--mono); font-size: 20px; font-weight: 700; }
-        .history-hc { font-size: 12px; color: var(--text-dim); text-align: right; }
-
-        /* --- Analyzing Overlay --- */
-        .analyzing-overlay {
-            position: fixed; inset: 0; z-index: 100;
-            background: rgba(6,8,10,0.95);
-            display: flex; align-items: center; justify-content: center;
-            flex-direction: column; gap: 16px; padding: 40px;
-            text-align: center;
-        }
-        .progress-bar { width: 100%; max-width: 280px; height: 4px; background: #1f2937; border-radius: 2px; overflow: hidden; }
-        .progress-fill { height: 100%; background: var(--green); border-radius: 2px; transition: width 0.6s ease; }
-
-        /* --- Detail View --- */
-        .detail-angles { display: flex; flex-direction: column; gap: 2px; }
-        .angle-row {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 10px 0;
-            border-bottom: 1px solid var(--border);
-        }
-        .angle-name { font-size: 13px; display: flex; align-items: center; gap: 6px; }
-        .angle-value { font-family: var(--mono); font-size: 13px; font-weight: 600; }
-        .angle-range { font-size: 11px; color: var(--text-dim); margin-left: 6px; }
-
-        /* --- Setup Screen --- */
-        .setup-card { max-width: 400px; margin: 0 auto; padding: 32px 24px; }
-        .setup-step { display: flex; gap: 12px; align-items: flex-start; margin-bottom: 20px; }
-        .step-num {
-            flex-shrink: 0; width: 28px; height: 28px;
-            border-radius: 50%; background: var(--green-dim); color: var(--green);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 700;
-        }
-        .step-text { font-size: 14px; line-height: 1.5; }
-        .step-text strong { color: var(--text-bright); }
-
-        /* Canvas (hidden, used for processing) */
-        .processing-canvas { display: none; }
+        /* Plain English panel */
+        .eng-panel{padding:16px;border-radius:14px;background:linear-gradient(135deg,rgba(52,211,153,.06),rgba(96,165,250,.06));border:1px solid var(--brd)}
+        .eng-line{display:flex;align-items:flex-start;gap:10px;padding:8px 0;font-size:14px;line-height:1.5}
+        .eng-icon{flex-shrink:0;font-size:16px;margin-top:1px}
+        .eng-fix{color:var(--blue);font-weight:500}
     </style>
 </head>
 <body>
 
-<!-- ===================== SETUP SCREEN ===================== -->
-<div id="setupScreen" class="login-screen">
-    <div class="login-card">
-        <div class="login-logo">🏌️</div>
-        <div class="login-title">SwingIQ</div>
-        <div class="login-sub">Personal Swing Analysis</div>
-
-        <div id="setupStep1">
-            <p style="font-size:14px; color:var(--text-dim); margin-bottom:16px;">
-                Enter your Claude API key to get started.<br>
-                <span style="font-size:12px;">Get one at <strong style="color:var(--green)">console.anthropic.com</strong></span>
-            </p>
-            <input id="apiKeyInput" type="password" placeholder="sk-ant-..." style="margin-bottom:12px; font-family:var(--mono); font-size:14px;">
-            <input id="setupPassword" type="password" placeholder="Set an app password" style="margin-bottom:16px;">
-            <button class="btn btn-primary" onclick="saveSetup()">Get Started</button>
-            <p id="setupError" class="hidden" style="color:var(--red); font-size:13px; margin-top:12px;"></p>
+<!-- ===== SETUP ===== -->
+<div id="setupScreen" style="min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px;background:radial-gradient(ellipse at 50% 0%,rgba(52,211,153,.05) 0%,transparent 60%)">
+    <div style="width:100%;max-width:340px;text-align:center">
+        <div style="font-size:48px;margin-bottom:8px">🏌️</div>
+        <div style="font-size:28px;font-weight:700;color:var(--tb)">SwingIQ</div>
+        <div style="color:var(--td);font-size:14px;margin:4px 0 28px">Your Personal Swing Coach</div>
+        <div id="setupStep">
+            <p style="font-size:13px;color:var(--td);margin-bottom:16px">Enter your Claude API key<br><span style="font-size:12px">Get one at <strong style="color:var(--g)">console.anthropic.com</strong></span></p>
+            <input id="apiKeyInput" type="password" placeholder="sk-ant-..." autocomplete="off" style="margin-bottom:10px;font-family:var(--mono);font-size:14px">
+            <input id="setupPw" type="password" placeholder="Set an app password" autocomplete="new-password" style="margin-bottom:14px">
+            <button class="btn btn-g" onclick="saveSetup()">Get Started</button>
+            <p id="setupErr" class="hidden" style="color:var(--r);font-size:13px;margin-top:10px"></p>
         </div>
-
         <div id="loginStep" class="hidden">
-            <input id="loginPassword" type="password" placeholder="Enter your password" style="margin-bottom:16px;"
-                onkeydown="if(event.key==='Enter')doLogin()">
-            <button class="btn btn-primary" onclick="doLogin()">Unlock</button>
-            <p id="loginError" class="hidden" style="color:var(--red); font-size:13px; margin-top:12px;">Wrong password</p>
-            <button class="btn btn-ghost" style="margin-top:12px; font-size:13px;" onclick="resetApp()">Reset App</button>
+            <input id="loginPw" type="password" placeholder="Password" autocomplete="current-password" style="margin-bottom:14px" onkeydown="if(event.key==='Enter')doLogin()">
+            <button class="btn btn-g" onclick="doLogin()">Unlock</button>
+            <p id="loginErr" class="hidden" style="color:var(--r);font-size:13px;margin-top:10px">Wrong password</p>
+            <button class="btn btn-o" style="margin-top:10px;font-size:13px" onclick="if(confirm('Erase all data?')){localStorage.removeItem('swingiq');location.reload()}">Reset App</button>
         </div>
     </div>
 </div>
 
-<!-- ===================== MAIN APP ===================== -->
-<div id="mainApp" class="hidden screen">
-
-    <!-- Header -->
-    <div class="header">
-        <div class="header-inner">
-            <div class="logo">🏌️ SwingIQ</div>
-            <div class="tabs">
-                <button class="tab active" data-tab="analyze" onclick="switchTab('analyze')">Analyze</button>
-                <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
-                <button class="tab" data-tab="progress" onclick="switchTab('progress')">Progress</button>
-            </div>
+<!-- ===== MAIN ===== -->
+<div id="mainApp" class="hidden" style="min-height:100dvh;display:flex;flex-direction:column">
+    <div class="hdr"><div class="hdr-in">
+        <div class="logo">🏌️ SwingIQ</div>
+        <div class="tabs">
+            <button class="tab on" data-t="analyze" onclick="goTab('analyze')">Analyze</button>
+            <button class="tab" data-t="history" onclick="goTab('history')">History</button>
+            <button class="tab" data-t="progress" onclick="goTab('progress')">Progress</button>
         </div>
-    </div>
+    </div></div>
 
-    <!-- ===================== ANALYZE TAB ===================== -->
-    <div id="analyzeTab" class="container fade-in" style="padding-top:16px; padding-bottom:100px;">
+    <!-- ===== ANALYZE ===== -->
+    <div id="analyzeTab" class="wrap fade" style="padding-top:16px;padding-bottom:100px">
 
-        <!-- Club Selection -->
-        <div class="card" style="margin-bottom:12px;">
-            <div class="card-label">Club</div>
-            <select id="clubSelect">
-                <option>Driver</option>
-                <option>3-Wood</option><option>5-Wood</option>
-                <option>3-Hybrid</option><option>4-Hybrid</option>
-                <option>4-Iron</option><option>5-Iron</option><option>6-Iron</option>
-                <option>7-Iron</option><option>8-Iron</option><option>9-Iron</option>
-                <option>Pitching Wedge</option><option>Gap Wedge</option>
-                <option>Sand Wedge</option><option>Lob Wedge</option>
-            </select>
+        <!-- Mode -->
+        <div style="display:flex;gap:8px;margin-bottom:12px">
+            <button id="mUpload" class="btn btn-s" style="flex:1;background:var(--gd);color:var(--g)" onclick="setMode('upload')">📁 Upload</button>
+            <button id="mLive" class="btn btn-s" style="flex:1" onclick="setMode('live')">🎙️ Live</button>
         </div>
 
-        <!-- Video Upload -->
-        <div class="card" style="margin-bottom:12px;" id="uploadCard">
-            <div class="card-label">Swing Video</div>
-            <div class="upload-zone" id="uploadZone" onclick="document.getElementById('videoInput').click()">
-                <div class="upload-icon">📱</div>
-                <div class="upload-text">Record or Choose Video</div>
-                <div class="upload-hint">Tap to record or select from camera roll</div>
+        <!-- UPLOAD MODE -->
+        <div id="uploadMode">
+            <div class="card">
+                <div class="lbl">Club</div>
+                <select id="club"><option>Driver</option><option>3-Wood</option><option>5-Wood</option><option>3-Hybrid</option><option>4-Hybrid</option><option>4-Iron</option><option>5-Iron</option><option>6-Iron</option><option>7-Iron</option><option>8-Iron</option><option>9-Iron</option><option>Pitching Wedge</option><option>Gap Wedge</option><option>Sand Wedge</option><option>Lob Wedge</option></select>
             </div>
-            <input type="file" id="videoInput" accept="video/*" capture="environment" style="display:none" onchange="handleVideo(this)">
-
-            <div id="videoPreview" class="hidden" style="margin-top:12px;">
-                <video id="previewVid" style="width:100%; border-radius:12px;" controls playsinline></video>
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-top:8px;">
-                    <span id="vidName" style="font-size:12px; color:var(--text-dim); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:200px;"></span>
-                    <button onclick="clearVideo()" style="background:none; border:none; color:var(--red); font-size:13px; cursor:pointer;">Remove</button>
+            <div class="card">
+                <div class="lbl">Swing Video</div>
+                <div class="uzone" id="uzone" onclick="document.getElementById('vidIn').click()">
+                    <div style="font-size:32px;margin-bottom:6px">📱</div>
+                    <div style="font-weight:600;font-size:15px">Record or Choose Video</div>
+                    <div style="font-size:12px;color:var(--td);margin-top:4px">Multi-swing videos supported</div>
                 </div>
-            </div>
-        </div>
-
-        <!-- Launch Monitor Data -->
-        <div class="card" style="margin-bottom:12px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="toggleLM()">
-                <div class="card-label" style="margin-bottom:0;">📊 Launch Monitor Data</div>
-                <span id="lmToggleIcon" style="font-size:12px; color:var(--text-dim);">＋ Add</span>
-            </div>
-            <div id="lmSection" class="hidden" style="margin-top:16px;">
-                <div class="lm-grid">
-                    <div class="lm-field"><label>Ball Speed (mph)</label><input type="number" id="lmBallSpeed" step="0.1" placeholder="165"></div>
-                    <div class="lm-field"><label>Club Speed (mph)</label><input type="number" id="lmClubSpeed" step="0.1" placeholder="112"></div>
-                    <div class="lm-field"><label>Launch Angle (°)</label><input type="number" id="lmLaunch" step="0.1" placeholder="12.5"></div>
-                    <div class="lm-field"><label>Spin Rate (rpm)</label><input type="number" id="lmSpin" step="1" placeholder="2400"></div>
-                    <div class="lm-field"><label>Carry (yards)</label><input type="number" id="lmCarry" step="0.1" placeholder="275"></div>
-                    <div class="lm-field"><label>Smash Factor</label><input type="number" id="lmSmash" step="0.01" placeholder="1.47"></div>
-                    <div class="lm-field"><label>Total Dist (yards)</label><input type="number" id="lmTotal" step="0.1" placeholder="295"></div>
-                    <div class="lm-field"><label>Attack Angle (°)</label><input type="number" id="lmAttack" step="0.1" placeholder="-1.5"></div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Analyze Button -->
-        <button class="btn btn-primary" id="analyzeBtn" onclick="runAnalysis()" disabled>
-            🔍 Analyze Swing — Free
-        </button>
-        <div id="costTracker" style="text-align:center; margin-top:8px; font-size:12px; color:var(--text-dim);">
-            Visual analysis is always free · AI coaching: <span id="costDisplay">$0.00</span> spent (<span id="coachCount">0</span> coaching sessions)
-        </div>
-
-        <!-- ===== RESULTS ===== -->
-        <div id="results" class="hidden fade-in" style="margin-top:20px;">
-
-            <!-- Score Card -->
-            <div class="card" style="display:flex; align-items:center; gap:20px; margin-bottom:12px;">
-                <div class="score-ring">
-                    <svg viewBox="0 0 36 36">
-                        <path d="M18 2.0845a15.9155 15.9155 0 010 31.831 15.9155 15.9155 0 010-31.831"
-                            fill="none" stroke="#1f2937" stroke-width="2.5"/>
-                        <path id="scoreArc" d="M18 2.0845a15.9155 15.9155 0 010 31.831 15.9155 15.9155 0 010-31.831"
-                            fill="none" stroke="var(--green)" stroke-width="2.5" stroke-dasharray="0, 100" stroke-linecap="round"/>
-                    </svg>
-                    <div class="ring-value">
-                        <div class="score-number" id="rScore">--</div>
-                        <div class="score-label">/ 100</div>
+                <input type="file" id="vidIn" accept="video/*" style="display:none" onchange="handleVid(this)">
+                <div id="vidPrev" class="hidden" style="margin-top:12px">
+                    <video id="prevVid" style="width:100%;border-radius:12px" controls playsinline></video>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:6px">
+                        <span id="vName" style="font-size:12px;color:var(--td);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px"></span>
+                        <button onclick="clearVid()" style="background:none;border:none;color:var(--r);font-size:13px;cursor:pointer">Remove</button>
                     </div>
                 </div>
-                <div>
-                    <div style="font-size:12px; color:var(--text-dim);">Estimated Handicap</div>
-                    <div id="rHandicap" class="mono" style="font-size:28px; font-weight:700;">--</div>
-                    <div id="rGrade" style="font-size:13px; color:var(--text-dim); margin-top:2px;">--</div>
-                </div>
             </div>
-
-            <!-- Position Carousel -->
-            <div class="card" style="margin-bottom:12px;">
-                <div class="card-label">Swing Positions</div>
-                <div class="position-scroll no-scrollbar" id="posScroll"></div>
-            </div>
-
-            <!-- Position Detail -->
-            <div id="posDetail" class="card hidden" style="margin-bottom:12px;">
-                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
-                    <div id="detailName" style="font-weight:700; font-size:17px;"></div>
-                    <div id="detailScore" class="mono" style="font-weight:700;"></div>
-                </div>
-                <canvas id="detailCanvas" style="width:100%; border-radius:12px; margin-bottom:12px;"></canvas>
-                <div id="detailAngles" class="detail-angles"></div>
-            </div>
-
-            <!-- Coaching (Optional — costs ~$0.30-0.60) -->
-            <div class="card" style="margin-bottom:12px;">
-                <div class="card-label">🤖 AI Coaching</div>
-                <div id="coachingPlaceholder">
-                    <p style="color:var(--text-dim); font-size:14px; margin-bottom:12px;">
-                        Your visual analysis and score are above — free, every swing.<br>
-                        Want Claude's detailed coaching? Tap below.
-                    </p>
-                    <button class="btn btn-primary" id="getCoachingBtn" onclick="requestCoaching()" style="background:var(--green-dim); color:var(--green); border:1px solid rgba(52,211,153,0.3);">
-                        🤖 Get AI Coaching (~$0.40)
-                    </button>
-                </div>
-                <div id="coachingLoading" class="hidden" style="text-align:center; padding:20px;">
-                    <div class="pulse" style="font-size:28px;">🤖</div>
-                    <p style="color:var(--text-dim); font-size:14px; margin-top:8px;">Getting coaching from Claude...</p>
-                </div>
-                <div id="coachingText" class="coaching hidden"></div>
-            </div>
-
-            <!-- Notes -->
             <div class="card">
-                <div class="card-label">📝 Session Notes</div>
-                <textarea id="sessionNotes" rows="3" placeholder="How did the session feel?"></textarea>
-                <button class="btn btn-ghost" style="margin-top:10px; font-size:13px;" onclick="saveNotes()">Save Notes</button>
+                <div style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleLM()">
+                    <div class="lbl" style="margin-bottom:0">📊 Launch Data</div>
+                    <span id="lmIcon" style="font-size:12px;color:var(--td)">＋</span>
+                </div>
+                <div id="lmSec" class="hidden" style="margin-top:14px">
+                    <div class="lm-g">
+                        <div class="lm-f"><label>Ball Speed</label><input type="number" id="lmBS" step=".1" placeholder="165 mph"></div>
+                        <div class="lm-f"><label>Club Speed</label><input type="number" id="lmCS" step=".1" placeholder="112 mph"></div>
+                        <div class="lm-f"><label>Launch Angle</label><input type="number" id="lmLA" step=".1" placeholder="12.5°"></div>
+                        <div class="lm-f"><label>Spin Rate</label><input type="number" id="lmSR" step="1" placeholder="2400 rpm"></div>
+                        <div class="lm-f"><label>Carry</label><input type="number" id="lmCY" step=".1" placeholder="275 yds"></div>
+                        <div class="lm-f"><label>Smash Factor</label><input type="number" id="lmSF" step=".01" placeholder="1.47"></div>
+                        <div class="lm-f"><label>Total Dist</label><input type="number" id="lmTD" step=".1" placeholder="295 yds"></div>
+                        <div class="lm-f"><label>Attack Angle</label><input type="number" id="lmAA" step=".1" placeholder="-1.5°"></div>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-g" id="goBtn" onclick="runAnalysis()" disabled>🔍 Analyze Swing(s)</button>
+        </div>
+
+        <!-- LIVE MODE -->
+        <div id="liveMode" class="hidden">
+            <div class="card" style="padding:12px">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+                    <select id="liveClub" style="width:auto;padding:6px 12px;font-size:13px;border-radius:8px"><option>Driver</option><option>7-Iron</option><option>9-Iron</option><option>Pitching Wedge</option></select>
+                    <div class="vtog von" id="vTog" onclick="toggleVoice()">🔊 Voice On</div>
+                </div>
+                <div class="live-wrap">
+                    <video id="liveVid" style="width:100%;display:block" autoplay playsinline muted></video>
+                    <div class="cam-ctrl">
+                        <button class="cam-btn" onclick="flipCamera()" title="Flip camera">🔄</button>
+                    </div>
+                </div>
+                <div style="display:flex;gap:8px;margin-top:10px">
+                    <button class="btn btn-g btn-s" id="liveBtn" onclick="toggleLive()" style="flex:1">▶ Start Practice</button>
+                </div>
+                <div id="liveStat" style="margin-top:10px;font-size:13px;color:var(--td);text-align:center">Set up phone, press Start, then swing.</div>
+                <div id="liveCount" class="hidden mono" style="text-align:center;margin-top:6px;font-size:22px;font-weight:700;color:var(--g)">0 swings</div>
+            </div>
+            <div id="liveCards" style="margin-top:12px"></div>
+        </div>
+
+        <!-- MULTI-SWING RESULTS -->
+        <div id="msr" class="hidden fade" style="margin-top:16px">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
+                    <div class="lbl" style="margin-bottom:0">Detected Swings</div>
+                    <span id="swCnt" class="mono" style="font-size:13px;color:var(--g)"></span>
+                </div>
+                <div id="swList"></div>
+                <div style="display:flex;gap:8px;margin-top:12px">
+                    <button class="btn btn-g btn-s" style="flex:1" onclick="saveAll()">✓ Save All</button>
+                    <button class="btn btn-o btn-s" style="flex:1" onclick="discAll()">✕ Discard All</button>
+                </div>
+            </div>
+            <div id="batchSec" class="hidden">
+                <button class="btn btn-g" id="batchBtn" onclick="runBatch()">🤖 Get Session Coaching</button>
+                <div id="batchRes" class="hidden card" style="margin-top:12px">
+                    <div class="lbl">🤖 Session Coaching</div>
+                    <div id="batchTxt" class="coach"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SINGLE SWING DETAIL -->
+        <div id="swDetail" class="hidden fade" style="margin-top:12px">
+            <div class="card">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+                    <button class="btn btn-o btn-s" onclick="$('swDetail').classList.add('hidden')">← Back</button>
+                    <span id="dLabel" class="mono" style="font-weight:700"></span>
+                </div>
+
+                <!-- Plain English Summary -->
+                <div id="engPanel" class="eng-panel" style="margin-bottom:16px"></div>
+
+                <!-- Positions -->
+                <div class="lbl">Key Positions</div>
+                <div class="pos-row" id="dPosRow" style="margin-bottom:12px"></div>
+
+                <!-- Selected position canvas -->
+                <div id="dPosCard" class="hidden" style="margin-bottom:12px">
+                    <canvas id="dCanvas" style="width:100%;border-radius:12px"></canvas>
+                    <div id="dVerdicts" style="margin-top:10px;display:flex;flex-wrap:wrap;gap:4px"></div>
+                    <details style="margin-top:10px">
+                        <summary style="font-size:12px;color:var(--td);cursor:pointer">📐 Technical Details</summary>
+                        <div id="dAngles" style="margin-top:8px;font-size:12px"></div>
+                    </details>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- ===================== HISTORY TAB ===================== -->
-    <div id="historyTab" class="container hidden fade-in" style="padding-top:16px; padding-bottom:40px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <h2 style="font-size:18px; font-weight:700;">History</h2>
-            <select id="histFilter" onchange="renderHistory()" style="width:auto; padding:6px 12px; font-size:13px; border-radius:8px;">
-                <option value="">All Clubs</option>
-                <option>Driver</option><option>7-Iron</option>
-            </select>
+    <!-- ===== HISTORY ===== -->
+    <div id="historyTab" class="wrap hidden fade" style="padding-top:16px;padding-bottom:40px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="font-size:18px;font-weight:700">History</div>
+            <select id="hFilt" onchange="renderHist()" style="width:auto;padding:6px 12px;font-size:13px;border-radius:8px"><option value="">All</option><option>Driver</option><option>7-Iron</option></select>
         </div>
-        <div id="histList"></div>
+        <div id="hList"></div>
     </div>
 
-    <!-- ===================== PROGRESS TAB ===================== -->
-    <div id="progressTab" class="container hidden fade-in" style="padding-top:16px; padding-bottom:40px;">
-        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
-            <h2 style="font-size:18px; font-weight:700;">Progress</h2>
-            <select id="progFilter" onchange="renderProgress()" style="width:auto; padding:6px 12px; font-size:13px; border-radius:8px;">
-                <option value="">All Clubs</option>
-                <option>Driver</option><option>7-Iron</option>
-            </select>
+    <!-- ===== PROGRESS ===== -->
+    <div id="progressTab" class="wrap hidden fade" style="padding-top:16px;padding-bottom:40px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+            <div style="font-size:18px;font-weight:700">Progress</div>
+            <select id="pFilt" onchange="renderProg()" style="width:auto;padding:6px 12px;font-size:13px;border-radius:8px"><option value="">All</option><option>Driver</option><option>7-Iron</option></select>
         </div>
-        <div class="card" style="margin-bottom:12px;">
-            <div class="card-label">Swing Score</div>
-            <canvas id="progScoreChart" height="180"></canvas>
-        </div>
-        <div class="card" style="margin-bottom:12px;">
-            <div class="card-label">Estimated Handicap</div>
-            <canvas id="progHcChart" height="180"></canvas>
-        </div>
-        <div class="card">
-            <div class="card-label">Launch Monitor Trends</div>
-            <canvas id="progLmChart" height="220"></canvas>
-        </div>
+        <div class="card"><div class="lbl">Swing Score</div><canvas id="pSc" height="180"></canvas></div>
+        <div class="card"><div class="lbl">Handicap</div><canvas id="pHc" height="180"></canvas></div>
+        <div class="card"><div class="lbl">Launch Trends</div><canvas id="pLm" height="220"></canvas></div>
     </div>
 </div>
 
-<!-- Analyzing Overlay -->
-<div id="analyzingOverlay" class="analyzing-overlay hidden">
-    <div class="pulse" style="font-size:56px;">🏌️</div>
-    <div style="font-weight:700; font-size:18px; color:var(--text-bright);">Analyzing your swing</div>
-    <div id="analysisStep" style="font-size:14px; color:var(--text-dim);">Preparing...</div>
-    <div class="progress-bar"><div id="progressFill" class="progress-fill" style="width:0%"></div></div>
+<!-- Overlay -->
+<div id="ovl" class="overlay hidden">
+    <div class="pulse" style="font-size:56px">🏌️</div>
+    <div style="font-weight:700;font-size:18px;color:var(--tb)" id="ovlTitle">Analyzing your swing(s)</div>
+    <div id="ovlStep" style="font-size:14px;color:var(--td)">Preparing...</div>
+    <div class="pbar"><div id="ovlFill" class="pfill" style="width:0%"></div></div>
 </div>
 
-<!-- Hidden canvases for processing -->
-<canvas id="frameCanvas" class="processing-canvas"></canvas>
-<canvas id="annotCanvas" class="processing-canvas"></canvas>
+<canvas id="fCvs" class="processing-canvas"></canvas>
+<canvas id="aCvs" class="processing-canvas"></canvas>
+<canvas id="lCvs" class="processing-canvas"></canvas>
 
 <script>
-// ========================================================================
-//  SWINGIQ — Client-Side Golf Swing Analysis
-//  Runs entirely in the browser. No server needed.
-// ========================================================================
+const $=id=>document.getElementById(id);
+const POS=['Address','Takeaway','Top','Downswing','Impact','Follow-Through'];
+const SK='swingiq';
+const KP={NOSE:0,L_SH:5,R_SH:6,L_EL:7,R_EL:8,L_WR:9,R_WR:10,L_HI:11,R_HI:12,L_KN:13,R_KN:14,L_AN:15,R_AN:16};
 
-// --- Constants ---
-const POSITIONS = ['Address', 'Takeaway', 'Top', 'Downswing', 'Impact', 'Follow-Through'];
-const STORAGE_KEY = 'swingiq_data';
-
-// MoveNet keypoint indices
-const KP = {
-    NOSE: 0, L_EYE: 1, R_EYE: 2, L_EAR: 3, R_EAR: 4,
-    L_SHOULDER: 5, R_SHOULDER: 6, L_ELBOW: 7, R_ELBOW: 8,
-    L_WRIST: 9, R_WRIST: 10, L_HIP: 11, R_HIP: 12,
-    L_KNEE: 13, R_KNEE: 14, L_ANKLE: 15, R_ANKLE: 16,
+// Ideal ranges + plain English verdicts
+const IDEALS={
+    Address:{spine:[28,38],knee_l:[140,160]},
+    Takeaway:{spine:[28,38],l_arm:[160,180]},
+    Top:{spine:[25,40],l_arm:[155,180],hip_rot:[30,50]},
+    Downswing:{spine:[28,42],hip_rot:[20,45]},
+    Impact:{spine:[28,42],l_arm:[155,180]},
+    'Follow-Through':{spine:[15,35]}
 };
-
-// Optimal angle ranges per position
-const OPTIMAL = {
-    Address:       { spine_angle: [28,38], knee_flex_lead: [140,160] },
-    Takeaway:      { spine_angle: [28,38], left_arm_angle: [160,180] },
-    Top:           { spine_angle: [25,40], left_arm_angle: [155,180] },
-    Downswing:     { spine_angle: [28,42] },
-    Impact:        { spine_angle: [28,42], left_arm_angle: [155,180] },
-    'Follow-Through': { spine_angle: [15,35] },
+const VERDICTS={
+    spine:{good:'Spine angle looks solid',warn_lo:'Standing too tall — bend more from the hips',warn_hi:'Too hunched over — straighten up a bit',bad_lo:'Way too upright — need more forward tilt',bad_hi:'Way too bent over — you\'ll lose power and balance'},
+    l_arm:{good:'Left arm nice and straight',warn:'Left arm breaking down slightly',bad:'Left arm collapsed — focus on keeping it extended'},
+    knee_l:{good:'Good knee flex',warn_lo:'Legs too straight — add some athletic flex',warn_hi:'Knees too bent — you\'re squatting',bad_lo:'Locked knees — soften them',bad_hi:'Way too deep — stand taller'},
+    hip_rot:{good:'Great hip rotation',warn_lo:'Hips not rotating enough — turn more',warn_hi:'Over-rotating hips',bad_lo:'Hips are stuck — they need to fire first',bad_hi:'Hips spinning out — slow them down'}
 };
+const POS_W={Address:1,Takeaway:.8,Top:1.2,Downswing:1.3,Impact:1.5,'Follow-Through':.7};
 
-// Position weights for overall score
-const POS_WEIGHTS = { Address:1, Takeaway:0.8, Top:1.2, Downswing:1.3, Impact:1.5, 'Follow-Through':0.7 };
+let state=load();
+let vidFile=null,detector=null,dSwings=[],voiceOn=true,liveOn=false,liveStream=null,liveCnt=0,liveInt=null,prevGray=null,mBase=0,cooldown=false;
+let facingMode='environment';
 
-// --- State ---
-let appState = loadState();
-let videoFile = null;
-let detector = null;
-let currentResults = null;
-let currentSessionId = null;
+function load(){try{const r=localStorage.getItem(SK);return r?JSON.parse(r):{key:'',pw:'',sessions:[]}}catch{return{key:'',pw:'',sessions:[]}}}
+function save(){try{localStorage.setItem(SK,JSON.stringify(state))}catch{}}
 
-// ======================== STORAGE ========================
-function loadState() {
-    try {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return { apiKey: '', password: '', sessions: [], totalApiCost: 0, coachingCount: 0 };
-        const state = JSON.parse(raw);
-        if (state.totalApiCost == null) state.totalApiCost = 0;
-        if (state.coachingCount == null) state.coachingCount = 0;
-        return state;
-    } catch { return { apiKey: '', password: '', sessions: [], totalApiCost: 0, coachingCount: 0 }; }
-}
+// ===== SETUP =====
+(function(){if(state.key&&state.pw){$('setupStep').classList.add('hidden');$('loginStep').classList.remove('hidden')}if(state.in)showApp()})();
+function saveSetup(){const k=$('apiKeyInput').value.trim(),p=$('setupPw').value;if(!k.startsWith('sk-ant-'))return sErr('API key should start with sk-ant-');if(p.length<4)return sErr('Password must be 4+ characters');state.key=k;state.pw=p;state.in=true;save();showApp()}
+function doLogin(){if($('loginPw').value===state.pw){state.in=true;save();showApp()}else $('loginErr').classList.remove('hidden')}
+function sErr(m){$('setupErr').textContent=m;$('setupErr').classList.remove('hidden')}
+function showApp(){$('setupScreen').classList.add('hidden');$('mainApp').classList.remove('hidden');initDetector()}
 
-function saveState() {
-    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(appState)); } catch(e) { console.error('Save failed:', e); }
-}
+// ===== TABS =====
+function goTab(t){['analyze','history','progress'].forEach(x=>{$(x+'Tab').classList.toggle('hidden',x!==t);document.querySelector(`.tab[data-t="${x}"]`).classList.toggle('on',x===t)});if(t==='history')renderHist();if(t==='progress')renderProg()}
 
-// ======================== SETUP / LOGIN ========================
-function initApp() {
-    if (appState.apiKey && appState.password) {
-        document.getElementById('setupStep1').classList.add('hidden');
-        document.getElementById('loginStep').classList.remove('hidden');
-    }
-    if (appState.loggedIn) {
-        showMainApp();
-    }
-}
+// ===== MODE =====
+function setMode(m){$('uploadMode').classList.toggle('hidden',m!=='upload');$('liveMode').classList.toggle('hidden',m!=='live');$('mUpload').style.background=m==='upload'?'var(--gd)':'transparent';$('mUpload').style.color=m==='upload'?'var(--g)':'var(--td)';$('mLive').style.background=m==='live'?'var(--gd)':'transparent';$('mLive').style.color=m==='live'?'var(--g)':'var(--td)';if(m==='live')initCam();else stopLive()}
 
-function saveSetup() {
-    const key = document.getElementById('apiKeyInput').value.trim();
-    const pw = document.getElementById('setupPassword').value;
-    if (!key.startsWith('sk-ant-')) {
-        showError('setupError', 'API key should start with sk-ant-');
-        return;
-    }
-    if (pw.length < 4) {
-        showError('setupError', 'Password must be at least 4 characters');
-        return;
-    }
-    appState.apiKey = key;
-    appState.password = pw;
-    appState.loggedIn = true;
-    saveState();
-    showMainApp();
-}
+// ===== VIDEO =====
+function handleVid(inp){const f=inp.files[0];if(!f)return;vidFile=f;$('uzone').classList.add('hidden');$('vidPrev').classList.remove('hidden');$('vName').textContent=f.name;$('prevVid').src=URL.createObjectURL(f);$('goBtn').disabled=false}
+function clearVid(){vidFile=null;$('uzone').classList.remove('hidden');$('vidPrev').classList.add('hidden');$('vidIn').value='';$('goBtn').disabled=true}
+function toggleLM(){$('lmSec').classList.toggle('hidden');$('lmIcon').textContent=$('lmSec').classList.contains('hidden')?'＋':'－'}
 
-function doLogin() {
-    const pw = document.getElementById('loginPassword').value;
-    if (pw === appState.password) {
-        appState.loggedIn = true;
-        saveState();
-        showMainApp();
-    } else {
-        document.getElementById('loginError').classList.remove('hidden');
-    }
-}
+// ===== VOICE =====
+function speak(t){if(!voiceOn)return;try{const u=new SpeechSynthesisUtterance(t);u.rate=1.05;u.lang='en-US';speechSynthesis.speak(u)}catch{}}
+function toggleVoice(){voiceOn=!voiceOn;$('vTog').className='vtog '+(voiceOn?'von':'voff');$('vTog').innerHTML=voiceOn?'🔊 Voice On':'🔇 Off'}
 
-function resetApp() {
-    if (confirm('This will erase ALL data including your sessions and API key. Are you sure?')) {
-        localStorage.removeItem(STORAGE_KEY);
-        location.reload();
-    }
-}
+// ===== CAMERA =====
+async function initCam(){try{if(liveStream)liveStream.getTracks().forEach(t=>t.stop());liveStream=await navigator.mediaDevices.getUserMedia({video:{facingMode,width:{ideal:1280},height:{ideal:720}},audio:false});$('liveVid').srcObject=liveStream}catch(e){$('liveStat').textContent='Camera denied. Check Settings → Safari → Camera.'}}
+function flipCamera(){facingMode=facingMode==='environment'?'user':'environment';initCam()}
 
-function showMainApp() {
-    document.getElementById('setupScreen').classList.add('hidden');
-    document.getElementById('mainApp').classList.remove('hidden');
-    updateCostDisplay();
-    initPoseDetector();
-}
+// ===== DETECTOR =====
+async function initDetector(){try{detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_THUNDER});console.log('Detector ready')}catch(e){console.error(e)}}
 
-function updateCostDisplay() {
-    const costEl = document.getElementById('costDisplay');
-    const countEl = document.getElementById('coachCount');
-    if (costEl) costEl.textContent = '$' + (appState.totalApiCost || 0).toFixed(2);
-    if (countEl) countEl.textContent = appState.coachingCount || 0;
-}
-
-function showError(id, msg) {
-    const el = document.getElementById(id);
-    el.textContent = msg;
-    el.classList.remove('hidden');
-}
-
-// ======================== TABS ========================
-function switchTab(tab) {
-    ['analyze', 'history', 'progress'].forEach(t => {
-        document.getElementById(t + 'Tab').classList.toggle('hidden', t !== tab);
-        document.querySelector(`.tab[data-tab="${t}"]`).classList.toggle('active', t === tab);
-    });
-    if (tab === 'history') renderHistory();
-    if (tab === 'progress') renderProgress();
-}
-
-// ======================== VIDEO HANDLING ========================
-function handleVideo(input) {
-    const file = input.files[0];
-    if (!file) return;
-    videoFile = file;
-    document.getElementById('uploadZone').classList.add('hidden');
-    document.getElementById('videoPreview').classList.remove('hidden');
-    document.getElementById('vidName').textContent = file.name;
-    const vid = document.getElementById('previewVid');
-    vid.src = URL.createObjectURL(file);
-    document.getElementById('analyzeBtn').disabled = false;
-}
-
-function clearVideo() {
-    videoFile = null;
-    document.getElementById('uploadZone').classList.remove('hidden');
-    document.getElementById('videoPreview').classList.add('hidden');
-    document.getElementById('videoInput').value = '';
-    document.getElementById('analyzeBtn').disabled = true;
-}
-
-function toggleLM() {
-    const s = document.getElementById('lmSection');
-    const icon = document.getElementById('lmToggleIcon');
-    s.classList.toggle('hidden');
-    icon.textContent = s.classList.contains('hidden') ? '＋ Add' : '－ Hide';
-}
-
-// ======================== POSE DETECTOR INIT ========================
-async function initPoseDetector() {
-    try {
-        const model = poseDetection.SupportedModels.MoveNet;
-        detector = await poseDetection.createDetector(model, {
-            modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER,
-        });
-        console.log('Pose detector ready');
-    } catch(e) {
-        console.error('Failed to init pose detector:', e);
-    }
-}
-
-// ======================== MAIN ANALYSIS PIPELINE ========================
-async function runAnalysis() {
-    if (!videoFile || !detector) {
-        if (!detector) { alert('Pose detector still loading. Wait a moment and try again.'); return; }
-        return;
-    }
-
-    const overlay = document.getElementById('analyzingOverlay');
-    overlay.classList.remove('hidden');
-    updateProgress('Loading video...', 5);
-
-    try {
-        // Step 1: Extract frames from video
-        updateProgress('Extracting key positions...', 10);
-        const frames = await extractFrames(videoFile);
-
-        // Step 2: Run pose detection on each frame
-        const positionResults = [];
-        for (let i = 0; i < frames.length; i++) {
-            updateProgress(`Analyzing ${POSITIONS[i]}...`, 15 + (i * 12));
-            const result = await analyzePosition(frames[i], POSITIONS[i]);
-            positionResults.push(result);
+// ===== ANALYSIS PIPELINE =====
+async function runAnalysis(){
+    if(!vidFile||!detector)return;
+    $('ovl').classList.remove('hidden');prog('Loading video...',5);
+    try{
+        prog('Scanning for swings...',10);
+        const swings=await detectSwings(vidFile);
+        if(!swings.length)throw new Error('No swings found. Try a clearer video with more motion.');
+        dSwings=[];
+        for(let i=0;i<swings.length;i++){
+            prog(`Analyzing swing ${i+1}/${swings.length}...`,10+((i/swings.length)*80));
+            const r=await analyzeFrames(swings[i]);r.idx=i+1;r.st='pending';dSwings.push(r);
         }
+        prog('Done!',100);setTimeout(()=>{$('ovl').classList.add('hidden');showSwings()},400);
+    }catch(e){$('ovl').classList.add('hidden');alert(e.message);console.error(e)}
+}
+function prog(s,p){$('ovlStep').textContent=s;$('ovlFill').style.width=p+'%'}
 
-        // Step 3: Compute swing score
-        updateProgress('Computing swing score...', 85);
-        const swingScore = computeSwingScore(positionResults);
-
-        // Step 4: Get launch monitor data
-        const launchData = getLaunchData();
-
-        // Step 5: Save session (NO Claude call — that's optional)
-        updateProgress('Saving session...', 95);
-
-        const session = {
-            id: Date.now(),
-            date: new Date().toISOString(),
-            club: document.getElementById('clubSelect').value,
-            swingScore,
-            positions: positionResults.map(r => ({
-                position: r.position,
-                angles: r.angles,
-                scores: r.scores,
-                imageData: r.annotatedDataUrl,
-            })),
-            coaching: null, // Filled in later if user requests it
-            launchData,
-            notes: '',
+// ===== SWING DETECTION =====
+async function detectSwings(file){
+    return new Promise((res,rej)=>{
+        const v=document.createElement('video');v.muted=true;v.playsInline=true;v.preload='auto';
+        v.onloadedmetadata=async()=>{
+            const dur=v.duration;if(dur<.5){rej(new Error('Too short'));return}
+            const c=$('fCvs'),cx=c.getContext('2d');
+            const n=Math.min(150,Math.floor(dur*15));
+            const mp=[],sf=[];
+            for(let i=0;i<n;i++){const t=(i/n)*dur;try{const d=await seek(v,c,cx,t);sf.push({t,d});mp.push(i>0?{t,m:motion(sf[i-1].d,d,c.width,c.height)}:{t,m:0})}catch{mp.push({t,m:0})}}
+            const wins=findPeaks(mp,dur);
+            const all=[];
+            for(const w of wins){const kt=keyTimes(mp,w.s,w.p,w.e);const frames=[];for(const t of kt){try{const d=await seek(v,c,cx,t);frames.push({t,imageData:d,width:c.width,height:c.height})}catch{}}if(frames.length>=4)all.push(frames)}
+            URL.revokeObjectURL(v.src);res(all);
         };
-
-        appState.sessions.unshift(session);
-        if (appState.sessions.length > 200) appState.sessions = appState.sessions.slice(0, 200);
-        saveState();
-
-        currentResults = session;
-        currentSessionId = session.id;
-
-        // Step 6: Display results (instant, free!)
-        updateProgress('Done!', 100);
-        setTimeout(() => {
-            overlay.classList.add('hidden');
-            displayResults(session);
-        }, 400);
-
-    } catch(e) {
-        overlay.classList.add('hidden');
-        alert('Analysis error: ' + e.message);
-        console.error(e);
-    }
-}
-
-function updateProgress(step, pct) {
-    document.getElementById('analysisStep').textContent = step;
-    document.getElementById('progressFill').style.width = pct + '%';
-}
-
-// ======================== FRAME EXTRACTION ========================
-async function extractFrames(file) {
-    return new Promise((resolve, reject) => {
-        const video = document.createElement('video');
-        video.muted = true;
-        video.playsInline = true;
-        video.preload = 'auto';
-
-        video.onloadedmetadata = async () => {
-            const duration = video.duration;
-            if (duration < 0.5) { reject(new Error('Video too short')); return; }
-
-            const canvas = document.getElementById('frameCanvas');
-            const ctx = canvas.getContext('2d');
-
-            // Sample frames throughout the video to find the swing
-            const sampleCount = Math.min(60, Math.floor(duration * 15));
-            const motionProfile = [];
-            const sampleFrames = [];
-
-            for (let i = 0; i < sampleCount; i++) {
-                const t = (i / sampleCount) * duration;
-                try {
-                    const imgData = await seekAndCapture(video, canvas, ctx, t);
-                    sampleFrames.push({ time: t, imageData: imgData });
-
-                    if (i > 0) {
-                        const prev = sampleFrames[i - 1].imageData;
-                        const curr = imgData;
-                        const motion = computeMotion(prev, curr, canvas.width, canvas.height);
-                        motionProfile.push({ time: t, motion });
-                    } else {
-                        motionProfile.push({ time: t, motion: 0 });
-                    }
-                } catch { motionProfile.push({ time: t, motion: 0 }); }
-            }
-
-            // Find swing window from motion profile
-            const keyTimes = findKeyPositionTimes(motionProfile, duration);
-
-            // Extract frames at key times
-            const frames = [];
-            for (const t of keyTimes) {
-                try {
-                    const imgData = await seekAndCapture(video, canvas, ctx, t);
-                    frames.push({ time: t, imageData: imgData, width: canvas.width, height: canvas.height });
-                } catch(e) {
-                    console.warn('Frame extraction failed at', t);
-                }
-            }
-
-            URL.revokeObjectURL(video.src);
-            if (frames.length < 4) reject(new Error('Could not extract enough frames. Try a clearer video.'));
-            else resolve(frames);
-        };
-
-        video.onerror = () => reject(new Error('Could not load video'));
-        video.src = URL.createObjectURL(file);
+        v.onerror=()=>rej(new Error('Cannot load video'));v.src=URL.createObjectURL(file);
     });
 }
+function seek(v,c,cx,t){return new Promise((res,rej)=>{v.currentTime=t;v.onseeked=()=>{c.width=v.videoWidth;c.height=v.videoHeight;cx.drawImage(v,0,0);res(cx.getImageData(0,0,c.width,c.height))};setTimeout(()=>rej('timeout'),5000)})}
+function motion(a,b,w,h){let d=0;const s=8;for(let i=0;i<a.data.length;i+=s*4)d+=(Math.abs(a.data[i]-b.data[i])+Math.abs(a.data[i+1]-b.data[i+1])+Math.abs(a.data[i+2]-b.data[i+2]))/3;return d/(a.data.length/(s*4))}
+function smooth(a,r){return a.map((_,i)=>{let s=0,c=0;for(let j=Math.max(0,i-r);j<=Math.min(a.length-1,i+r);j++){s+=a[j];c++}return s/c})}
 
-function seekAndCapture(video, canvas, ctx, time) {
-    return new Promise((resolve, reject) => {
-        video.currentTime = time;
-        video.onseeked = () => {
-            canvas.width = video.videoWidth;
-            canvas.height = video.videoHeight;
-            ctx.drawImage(video, 0, 0);
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            resolve(imageData);
-        };
-        video.onerror = reject;
-        setTimeout(() => reject(new Error('Seek timeout')), 5000);
-    });
+function findPeaks(mp,dur){
+    const ms=mp.map(x=>x.m),ts=mp.map(x=>x.t),sm=smooth(ms,3),mx=Math.max(...sm);
+    if(mx<1)return[];const th=mx*.25;
+    const pks=[];
+    for(let i=3;i<sm.length-3;i++){if(sm[i]>th&&sm[i]>=sm[i-1]&&sm[i]>=sm[i+1]&&sm[i]>=sm[i-2])pks.push(i)}
+    const gap=Math.max(4,Math.floor(mp.length/dur*.8)),merged=[];
+    for(const p of pks){if(!merged.length||p-merged[merged.length-1]>gap)merged.push(p);else if(sm[p]>sm[merged[merged.length-1]])merged[merged.length-1]=p}
+    return merged.map(pk=>{let s=pk;while(s>0&&sm[s]>th*.2)s--;s=Math.max(0,s-3);let e=pk;while(e<sm.length-1&&sm[e]>th*.2)e++;e=Math.min(sm.length-1,e+3);return{s,p:pk,e}});
 }
 
-function computeMotion(prev, curr, w, h) {
-    let diff = 0;
-    const step = 8; // Sample every 8th pixel for speed
-    for (let i = 0; i < prev.data.length; i += step * 4) {
-        const dr = Math.abs(prev.data[i] - curr.data[i]);
-        const dg = Math.abs(prev.data[i+1] - curr.data[i+1]);
-        const db = Math.abs(prev.data[i+2] - curr.data[i+2]);
-        diff += (dr + dg + db) / 3;
-    }
-    return diff / (prev.data.length / (step * 4));
+function keyTimes(mp,si,pi,ei){
+    const ts=mp.map(x=>x.t),sm=smooth(mp.map(x=>x.m),3);
+    let ti=Math.floor((si+pi)/2),mv=Infinity;
+    for(let i=Math.max(si,si+Math.floor((pi-si)*.25));i<pi-1;i++){if(sm[i]<mv){mv=sm[i];ti=i}}
+    const ai=Math.max(0,si),tki=ai+Math.round((ti-ai)*.4),di=ti+Math.round((pi-ti)*.5),fi=Math.min(mp.length-1,pi+Math.round((ei-pi)*.5));
+    let idx=[ai,tki,ti,di,pi,fi];
+    for(let i=1;i<idx.length;i++){if(idx[i]<=idx[i-1])idx[i]=Math.min(idx[i-1]+1,mp.length-1)}
+    return idx.map(i=>ts[Math.min(i,ts.length-1)]);
 }
 
-function findKeyPositionTimes(motionProfile, duration) {
-    if (motionProfile.length < 6) {
-        // Fallback: evenly space
-        return Array.from({length: 6}, (_, i) => (i / 5) * duration * 0.9);
-    }
-
-    const motions = motionProfile.map(m => m.motion);
-    const times = motionProfile.map(m => m.time);
-
-    // Smooth
-    const smoothed = smoothArray(motions, 3);
-
-    // Find peak (impact)
-    let peakIdx = 0;
-    for (let i = 1; i < smoothed.length; i++) {
-        if (smoothed[i] > smoothed[peakIdx]) peakIdx = i;
-    }
-
-    // Find top of backswing (local min before peak)
-    let topIdx = Math.floor(peakIdx * 0.5);
-    let minVal = Infinity;
-    const searchStart = Math.floor(peakIdx * 0.25);
-    const searchEnd = Math.max(searchStart + 1, peakIdx - 1);
-    for (let i = searchStart; i < searchEnd; i++) {
-        if (smoothed[i] < minVal) { minVal = smoothed[i]; topIdx = i; }
-    }
-
-    // Threshold for swing start
-    const peakVal = smoothed[peakIdx];
-    const threshold = peakVal * 0.15;
-    let swingStartIdx = 0;
-    for (let i = 0; i < topIdx; i++) {
-        if (smoothed[i] > threshold) { swingStartIdx = Math.max(0, i - 2); break; }
-    }
-
-    // Address: just before swing starts
-    const addressIdx = Math.max(0, swingStartIdx - 2);
-
-    // Takeaway: between address and top
-    const takeawayIdx = addressIdx + Math.round((topIdx - addressIdx) * 0.4);
-
-    // Downswing: between top and impact
-    const downswingIdx = topIdx + Math.round((peakIdx - topIdx) * 0.5);
-
-    // Follow-through: after impact
-    const remaining = smoothed.length - 1 - peakIdx;
-    const followIdx = Math.min(smoothed.length - 1, peakIdx + Math.round(remaining * 0.5));
-
-    const indices = [addressIdx, takeawayIdx, topIdx, downswingIdx, peakIdx, followIdx];
-
-    // Ensure strictly increasing
-    for (let i = 1; i < indices.length; i++) {
-        if (indices[i] <= indices[i-1]) indices[i] = Math.min(indices[i-1] + 1, smoothed.length - 1);
-    }
-
-    return indices.map(i => times[Math.min(i, times.length - 1)]);
+// ===== POSE ANALYSIS =====
+async function analyzeFrames(frames){
+    const results=[];
+    for(let i=0;i<frames.length;i++)results.push(await analyzePos(frames[i],POS[i]||'Pos '+(i+1)));
+    return{positions:results,score:calcScore(results),club:$('club').value,launch:getLM(),date:new Date().toISOString()};
 }
 
-function smoothArray(arr, radius) {
-    const result = [];
-    for (let i = 0; i < arr.length; i++) {
-        let sum = 0, count = 0;
-        for (let j = Math.max(0, i - radius); j <= Math.min(arr.length - 1, i + radius); j++) {
-            sum += arr[j]; count++;
+async function analyzePos(frame,pos){
+    const c=$('fCvs'),cx=c.getContext('2d');c.width=frame.width;c.height=frame.height;cx.putImageData(frame.imageData,0,0);
+    let kps=null;try{const p=await detector.estimatePoses(c);if(p.length)kps=p[0].keypoints}catch{}
+    const ang=kps?calcAngles(kps,frame.width,frame.height):{};
+    const sc=scorePos(ang,pos);
+    const eng=getVerdicts(ang,sc,pos);
+    const ac=$('aCvs');ac.width=frame.width;ac.height=frame.height;
+    const ax=ac.getContext('2d');ax.putImageData(frame.imageData,0,0);
+    if(kps)drawVisual(ax,kps,ang,sc,pos,frame.width,frame.height);
+    drawHdr(ax,pos,posScore(sc),frame.width);
+    return{position:pos,angles:ang,scores:sc,verdicts:eng,pscore:posScore(sc),img:ac.toDataURL('image/jpeg',.85),hasPose:!!kps};
+}
+
+function pt(kps,i){const k=kps[i];return{x:k.x,y:k.y}}
+function angB(a,b,c){const ba={x:a.x-b.x,y:a.y-b.y},bc={x:c.x-b.x,y:c.y-b.y};const d=ba.x*bc.x+ba.y*bc.y,m=Math.sqrt(ba.x**2+ba.y**2)*Math.sqrt(bc.x**2+bc.y**2);return m===0?0:Math.acos(Math.max(-1,Math.min(1,d/m)))*57.2958}
+function angV(a,b){return Math.atan2(Math.abs(b.x-a.x),Math.abs(b.y-a.y))*57.2958}
+function rnd(v){return Math.round(v*10)/10}
+
+function calcAngles(kps,w,h){
+    const ls=pt(kps,KP.L_SH),rs=pt(kps,KP.R_SH),lh=pt(kps,KP.L_HI),rh=pt(kps,KP.R_HI);
+    const lk=pt(kps,KP.L_KN),rk=pt(kps,KP.R_KN),la=pt(kps,KP.L_AN),ra=pt(kps,KP.R_AN);
+    const le=pt(kps,KP.L_EL),re=pt(kps,KP.R_EL),lw=pt(kps,KP.L_WR),rw=pt(kps,KP.R_WR);
+    const mh={x:(lh.x+rh.x)/2,y:(lh.y+rh.y)/2},ms={x:(ls.x+rs.x)/2,y:(ls.y+rs.y)/2};
+    const a={};
+    a.spine=rnd(angV(mh,ms));a.knee_l=rnd(angB(lh,lk,la));a.knee_r=rnd(angB(rh,rk,ra));
+    a.l_arm=rnd(angB(ls,le,lw));a.r_arm=rnd(angB(rs,re,rw));
+    const sw=Math.abs(ls.x-rs.x),hw=Math.abs(lh.x-rh.x);
+    if(hw>0)a.hip_rot=rnd(Math.max(0,(1-hw/Math.max(sw,1))*90));
+    a.sh_tilt=rnd(Math.abs(Math.atan2(rs.y-ls.y,rs.x-ls.x)*57.2958));
+    return a;
+}
+
+function scorePos(ang,pos){
+    const ideal=IDEALS[pos]||{};const sc={};
+    const map={spine:'spine',l_arm:'l_arm',knee_l:'knee_l',hip_rot:'hip_rot'};
+    for(const[ak,ik]of Object.entries(map)){
+        if(!ideal[ik]||ang[ak]==null)continue;
+        const[lo,hi]=ideal[ik],v=ang[ak];let dev=0;if(v<lo)dev=lo-v;else if(v>hi)dev=v-hi;
+        const s=Math.max(0,Math.round(100-dev*5));
+        sc[ak]={s,st:dev===0?'good':dev<=5?'warn':'bad',v,r:[lo,hi],dev:rnd(dev),dir:v<lo?'lo':'hi'};
+    }
+    return sc;
+}
+
+function posScore(sc){const v=Object.values(sc);return v.length?Math.round(v.reduce((a,x)=>a+x.s,0)/v.length):75}
+
+function getVerdicts(ang,scores,pos){
+    const lines=[];
+    for(const[k,s]of Object.entries(scores)){
+        const vd=VERDICTS[k];if(!vd)continue;
+        if(s.st==='good')lines.push({icon:'✅',text:vd.good,type:'good'});
+        else if(s.st==='warn')lines.push({icon:'⚠️',text:vd['warn_'+s.dir]||vd.warn||'Slightly off',type:'warn',fix:`Aim for ${s.r[0]}–${s.r[1]}°`});
+        else lines.push({icon:'🔴',text:vd['bad_'+s.dir]||vd.bad||'Needs work',type:'bad',fix:`Target: ${s.r[0]}–${s.r[1]}°`});
+    }
+    return lines;
+}
+
+// ===== VISUAL DRAWING (AMG-style) =====
+function drawVisual(cx,kps,ang,scores,pos,w,h){
+    const ls=pt(kps,KP.L_SH),rs=pt(kps,KP.R_SH),lh=pt(kps,KP.L_HI),rh=pt(kps,KP.R_HI);
+    const lk=pt(kps,KP.L_KN),rk=pt(kps,KP.R_KN),la=pt(kps,KP.L_AN),ra=pt(kps,KP.R_AN);
+    const le=pt(kps,KP.L_EL),re=pt(kps,KP.R_EL),lw=pt(kps,KP.L_WR),rw=pt(kps,KP.R_WR);
+    const nose=pt(kps,KP.NOSE);
+    const mh={x:(lh.x+rh.x)/2,y:(lh.y+rh.y)/2},ms={x:(ls.x+rs.x)/2,y:(ls.y+rs.y)/2};
+    const lw2=Math.max(2,w/250),dot=Math.max(4,w/140);
+
+    // === IDEAL ZONE OVERLAYS ===
+
+    // Spine angle zone (green translucent wedge from hips)
+    const spSc=scores.spine?.st||'good';const spCol=sCol(spSc);
+    // Draw ideal spine zone as a wedge
+    const ideal=IDEALS[pos];
+    if(ideal?.spine){
+        const[lo,hi]=ideal.spine;const dist=Math.sqrt((ms.x-mh.x)**2+(ms.y-mh.y)**2)*1.2;
+        cx.save();cx.translate(mh.x,mh.y);
+        cx.fillStyle='rgba(52,211,153,0.08)';
+        cx.beginPath();cx.moveTo(0,0);
+        cx.lineTo(-Math.sin(lo*Math.PI/180)*dist,-Math.cos(lo*Math.PI/180)*dist);
+        cx.lineTo(-Math.sin(hi*Math.PI/180)*dist,-Math.cos(hi*Math.PI/180)*dist);
+        cx.closePath();cx.fill();
+        // Zone borders
+        cx.strokeStyle='rgba(52,211,153,0.3)';cx.lineWidth=1;cx.setLineDash([4,4]);
+        cx.beginPath();cx.moveTo(0,0);cx.lineTo(-Math.sin(lo*Math.PI/180)*dist,-Math.cos(lo*Math.PI/180)*dist);cx.stroke();
+        cx.beginPath();cx.moveTo(0,0);cx.lineTo(-Math.sin(hi*Math.PI/180)*dist,-Math.cos(hi*Math.PI/180)*dist);cx.stroke();
+        cx.setLineDash([]);cx.restore();
+    }
+
+    // Swing plane line for Downswing/Impact
+    if(pos==='Downswing'||pos==='Impact'||pos==='Top'){
+        const handMid={x:(lw.x+rw.x)/2,y:(lw.y+rw.y)/2};
+        // Ideal plane from ball area through hands
+        cx.save();
+        cx.strokeStyle='rgba(52,211,153,0.4)';cx.lineWidth=Math.max(2,w/200);cx.setLineDash([8,6]);
+        const extX=handMid.x+(handMid.x-ms.x)*3,extY=handMid.y+(handMid.y-ms.y)*3;
+        cx.beginPath();cx.moveTo(ms.x-(handMid.x-ms.x),ms.y-(handMid.y-ms.y));cx.lineTo(extX,extY);cx.stroke();
+        cx.setLineDash([]);
+
+        // "Slot" zone — a shaded area where hands should be on downswing
+        if(pos==='Downswing'){
+            cx.fillStyle='rgba(52,211,153,0.06)';
+            const cx1=ms.x,cy1=ms.y;
+            const r=Math.sqrt((handMid.x-ms.x)**2+(handMid.y-ms.y)**2)*1.3;
+            cx.beginPath();
+            cx.moveTo(cx1,cy1);
+            const a1=Math.atan2(rh.y-ms.y,rh.x-ms.x);
+            const a2=a1+0.4;
+            cx.arc(cx1,cy1,r,a1,a2);cx.closePath();cx.fill();
+
+            // Label "THE SLOT"
+            const slotX=ms.x+Math.cos(a1+.2)*r*.6,slotY=ms.y+Math.sin(a1+.2)*r*.6;
+            const fs=Math.max(10,w/45);
+            cx.font=`bold ${fs}px 'DM Sans'`;cx.fillStyle='rgba(52,211,153,0.5)';
+            cx.fillText('THE SLOT',slotX-30,slotY);
         }
-        result.push(sum / count);
-    }
-    return result;
-}
-
-// ======================== POSE ANALYSIS ========================
-async function analyzePosition(frame, positionName) {
-    const canvas = document.getElementById('frameCanvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = frame.width;
-    canvas.height = frame.height;
-    ctx.putImageData(frame.imageData, 0, 0);
-
-    // Run pose detection
-    let keypoints = null;
-    try {
-        const poses = await detector.estimatePoses(canvas);
-        if (poses.length > 0) keypoints = poses[0].keypoints;
-    } catch(e) { console.warn('Pose detection failed for', positionName); }
-
-    // Calculate angles
-    const angles = keypoints ? calculateAngles(keypoints, frame.width, frame.height) : {};
-
-    // Score angles
-    const scores = scoreAngles(angles, positionName);
-
-    // Draw annotations
-    const annotCanvas = document.getElementById('annotCanvas');
-    annotCanvas.width = frame.width;
-    annotCanvas.height = frame.height;
-    const actx = annotCanvas.getContext('2d');
-    actx.putImageData(frame.imageData, 0, 0);
-
-    if (keypoints) drawAnnotations(actx, keypoints, angles, scores, positionName, frame.width, frame.height);
-
-    // Position label + score header
-    const posScore = computePositionScore(scores);
-    drawHeader(actx, positionName, posScore, frame.width);
-
-    return {
-        position: positionName,
-        angles,
-        scores,
-        positionScore: posScore,
-        annotatedDataUrl: annotCanvas.toDataURL('image/jpeg', 0.85),
-        poseDetected: !!keypoints,
-    };
-}
-
-function kp(keypoints, idx) {
-    const k = keypoints[idx];
-    return { x: k.x, y: k.y, score: k.score || 0 };
-}
-
-function angleBetween(a, b, c) {
-    const ba = { x: a.x - b.x, y: a.y - b.y };
-    const bc = { x: c.x - b.x, y: c.y - b.y };
-    const dot = ba.x * bc.x + ba.y * bc.y;
-    const magBA = Math.sqrt(ba.x * ba.x + ba.y * ba.y);
-    const magBC = Math.sqrt(bc.x * bc.x + bc.y * bc.y);
-    if (magBA * magBC === 0) return 0;
-    let cosAngle = dot / (magBA * magBC);
-    cosAngle = Math.max(-1, Math.min(1, cosAngle));
-    return Math.acos(cosAngle) * (180 / Math.PI);
-}
-
-function angleFromVertical(a, b) {
-    const dx = Math.abs(b.x - a.x);
-    const dy = Math.abs(b.y - a.y);
-    return Math.atan2(dx, dy) * (180 / Math.PI);
-}
-
-function calculateAngles(keypoints, w, h) {
-    const ls = kp(keypoints, KP.L_SHOULDER);
-    const rs = kp(keypoints, KP.R_SHOULDER);
-    const lh = kp(keypoints, KP.L_HIP);
-    const rh = kp(keypoints, KP.R_HIP);
-    const lk = kp(keypoints, KP.L_KNEE);
-    const rk = kp(keypoints, KP.R_KNEE);
-    const la = kp(keypoints, KP.L_ANKLE);
-    const ra = kp(keypoints, KP.R_ANKLE);
-    const le = kp(keypoints, KP.L_ELBOW);
-    const re = kp(keypoints, KP.R_ELBOW);
-    const lw = kp(keypoints, KP.L_WRIST);
-    const rw = kp(keypoints, KP.R_WRIST);
-    const nose = kp(keypoints, KP.NOSE);
-
-    const midHip = { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2 };
-    const midShoulder = { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2 };
-
-    const angles = {};
-    angles.spine_angle = round(angleFromVertical(midHip, midShoulder));
-    angles.knee_flex_lead = round(angleBetween(lh, lk, la));
-    angles.knee_flex_trail = round(angleBetween(rh, rk, ra));
-    angles.left_arm_angle = round(angleBetween(ls, le, lw));
-    angles.right_arm_angle = round(angleBetween(rs, re, rw));
-
-    const sw = Math.abs(ls.x - rs.x);
-    const hw = Math.abs(lh.x - rh.x);
-    if (hw > 0) angles.hip_rotation = round(Math.max(0, (1 - hw / Math.max(sw, 1)) * 90));
-
-    angles.shoulder_tilt = round(Math.abs(Math.atan2(rs.y - ls.y, rs.x - ls.x) * (180 / Math.PI)));
-
-    angles.head_x = round(nose.x / w * 100);
-    angles.head_y = round(nose.y / h * 100);
-    angles.hip_center_x = round(midHip.x / w * 100);
-
-    return angles;
-}
-
-function round(v) { return Math.round(v * 10) / 10; }
-
-function scoreAngles(angles, position) {
-    const optimal = OPTIMAL[position] || {};
-    const scores = {};
-    for (const [name, [lo, hi]] of Object.entries(optimal)) {
-        const val = angles[name];
-        if (val == null) continue;
-        let deviation = 0;
-        if (val < lo) deviation = lo - val;
-        else if (val > hi) deviation = val - hi;
-        const score = Math.max(0, Math.round(100 - deviation * 5));
-        const status = deviation === 0 ? 'good' : deviation <= 5 ? 'warning' : 'critical';
-        scores[name] = { score, status, value: val, range: [lo, hi], deviation: round(deviation) };
-    }
-    return scores;
-}
-
-function computePositionScore(scores) {
-    const vals = Object.values(scores);
-    if (vals.length === 0) return 75;
-    return Math.round(vals.reduce((s, v) => s + v.score, 0) / vals.length);
-}
-
-// ======================== ANNOTATION DRAWING ========================
-function drawAnnotations(ctx, keypoints, angles, scores, position, w, h) {
-    const ls = kp(keypoints, KP.L_SHOULDER), rs = kp(keypoints, KP.R_SHOULDER);
-    const lh = kp(keypoints, KP.L_HIP), rh = kp(keypoints, KP.R_HIP);
-    const lk = kp(keypoints, KP.L_KNEE), rk = kp(keypoints, KP.R_KNEE);
-    const la = kp(keypoints, KP.L_ANKLE), ra = kp(keypoints, KP.R_ANKLE);
-    const le = kp(keypoints, KP.L_ELBOW), re = kp(keypoints, KP.R_ELBOW);
-    const lw = kp(keypoints, KP.L_WRIST), rw = kp(keypoints, KP.R_WRIST);
-    const nose = kp(keypoints, KP.NOSE);
-
-    const midHip = { x: (lh.x + rh.x) / 2, y: (lh.y + rh.y) / 2 };
-    const midShoulder = { x: (ls.x + rs.x) / 2, y: (ls.y + rs.y) / 2 };
-
-    ctx.lineWidth = Math.max(2, w / 300);
-    const dotR = Math.max(4, w / 150);
-
-    // Skeleton
-    const skeletonPairs = [
-        [ls, rs], [lh, rh], [ls, lh], [rs, rh],
-        [ls, le], [le, lw], [rs, re], [re, rw],
-        [lh, lk], [lk, la], [rh, rk], [rk, ra],
-        [ls, nose], [rs, nose],
-    ];
-    ctx.strokeStyle = 'rgba(200,200,200,0.4)';
-    ctx.lineWidth = Math.max(1.5, w / 400);
-    for (const [a, b] of skeletonPairs) {
-        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke();
+        cx.restore();
     }
 
-    // Joint dots
-    const joints = [ls, rs, lh, rh, lk, rk, la, ra, le, re, lw, rw, nose];
-    for (const j of joints) {
-        ctx.fillStyle = '#fff';
-        ctx.beginPath(); ctx.arc(j.x, j.y, dotR, 0, Math.PI * 2); ctx.fill();
-        ctx.strokeStyle = 'rgba(52,211,153,0.8)';
-        ctx.lineWidth = 1.5;
-        ctx.stroke();
+    // === SKELETON ===
+    const pairs=[[ls,rs],[lh,rh],[ls,lh],[rs,rh],[ls,le],[le,lw],[rs,re],[re,rw],[lh,lk],[lk,la],[rh,rk],[rk,ra],[ls,nose],[rs,nose]];
+    cx.strokeStyle='rgba(255,255,255,0.25)';cx.lineWidth=Math.max(1.5,w/350);
+    for(const[a,b]of pairs){cx.beginPath();cx.moveTo(a.x,a.y);cx.lineTo(b.x,b.y);cx.stroke()}
+
+    // === JOINTS (color-coded) ===
+    const joints=[ls,rs,lh,rh,lk,rk,la,ra,le,re,lw,rw,nose];
+    for(const j of joints){cx.fillStyle='rgba(255,255,255,0.9)';cx.beginPath();cx.arc(j.x,j.y,dot*.7,0,Math.PI*2);cx.fill();cx.strokeStyle='rgba(52,211,153,0.6)';cx.lineWidth=1.5;cx.stroke()}
+
+    // === SPINE LINE (colored by score) ===
+    cx.strokeStyle=spCol;cx.lineWidth=Math.max(3,w/180);
+    const dx=ms.x-mh.x,dy=ms.y-mh.y;
+    cx.beginPath();cx.moveTo(mh.x-dx*.2,mh.y-dy*.2);cx.lineTo(ms.x+dx*.25,ms.y+dy*.25);cx.stroke();
+
+    // === LEFT ARM LINE (colored) ===
+    const armSt=scores.l_arm?.st||'good';
+    cx.strokeStyle=sCol(armSt);cx.lineWidth=Math.max(2.5,w/220);
+    cx.beginPath();cx.moveTo(ls.x,ls.y);cx.lineTo(le.x,le.y);cx.lineTo(lw.x,lw.y);cx.stroke();
+
+    // === SIMPLE LABELS (not numbers, just status) ===
+    const fs=Math.max(12,w/40);
+    if(scores.spine){
+        const txt=scores.spine.st==='good'?'✓ Spine':scores.spine.st==='warn'?'⚠ Spine':'✗ Spine';
+        drawBadge(cx,txt,mh.x+20,mh.y-20,spCol,fs,w);
     }
-
-    // Spine line
-    const spineStatus = scores.spine_angle?.status || 'good';
-    const spineColor = statusColor(spineStatus);
-    ctx.strokeStyle = spineColor;
-    ctx.lineWidth = Math.max(3, w / 200);
-    const dx = midShoulder.x - midHip.x, dy = midShoulder.y - midHip.y;
-    ctx.beginPath();
-    ctx.moveTo(midHip.x - dx * 0.25, midHip.y - dy * 0.25);
-    ctx.lineTo(midShoulder.x + dx * 0.3, midShoulder.y + dy * 0.3);
-    ctx.stroke();
-
-    // Vertical reference
-    ctx.strokeStyle = 'rgba(100,100,100,0.4)';
-    ctx.lineWidth = 1;
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(midHip.x, midHip.y);
-    ctx.lineTo(midHip.x, midHip.y - Math.abs(dy) * 1.3);
-    ctx.stroke();
-    ctx.setLineDash([]);
-
-    // Spine angle label
-    if (angles.spine_angle != null) {
-        drawLabel(ctx, `Spine: ${angles.spine_angle}°`, midHip.x + 15, midHip.y - 25, spineColor, w);
+    if(scores.l_arm){
+        const txt=scores.l_arm.st==='good'?'✓ Arm':scores.l_arm.st==='warn'?'⚠ Arm':'✗ Arm';
+        drawBadge(cx,txt,le.x-50,le.y-15,sCol(armSt),fs,w);
     }
-
-    // Arm lines
-    const armStatus = scores.left_arm_angle?.status || 'good';
-    ctx.strokeStyle = statusColor(armStatus);
-    ctx.lineWidth = Math.max(2.5, w / 250);
-    ctx.beginPath(); ctx.moveTo(ls.x, ls.y); ctx.lineTo(le.x, le.y); ctx.lineTo(lw.x, lw.y); ctx.stroke();
-    if (angles.left_arm_angle != null) {
-        drawLabel(ctx, `L Arm: ${angles.left_arm_angle}°`, le.x - 70, le.y - 10, statusColor(armStatus), w);
+    if(scores.knee_l){
+        const kSt=scores.knee_l.st;
+        const txt=kSt==='good'?'✓ Knees':kSt==='warn'?'⚠ Knees':'✗ Knees';
+        drawBadge(cx,txt,lk.x-40,lk.y+20,sCol(kSt),fs,w);
     }
-
-    // Knee label
-    if (angles.knee_flex_lead != null) {
-        const kneeStatus = scores.knee_flex_lead?.status || 'good';
-        drawLabel(ctx, `Knee: ${angles.knee_flex_lead}°`, lk.x - 60, lk.y + 15, statusColor(kneeStatus), w);
+    if(scores.hip_rot){
+        const hSt=scores.hip_rot.st;
+        const txt=hSt==='good'?'✓ Hips':hSt==='warn'?'⚠ Hips':'✗ Hips';
+        drawBadge(cx,txt,mh.x-60,mh.y+25,sCol(hSt),fs,w);
     }
 }
 
-function drawHeader(ctx, position, score, w) {
-    const h = Math.max(36, w / 12);
-    ctx.fillStyle = 'rgba(0,0,0,0.7)';
-    ctx.fillRect(0, 0, w, h);
-
-    ctx.font = `bold ${h * 0.5}px 'DM Sans', sans-serif`;
-    ctx.fillStyle = '#fff';
-    ctx.fillText(position, 10, h * 0.68);
-
-    const color = score >= 75 ? '#34d399' : score >= 50 ? '#fbbf24' : '#f87171';
-    const scoreText = `${score}/100`;
-    const tm = ctx.measureText(scoreText);
-    ctx.fillStyle = color;
-    ctx.fillText(scoreText, w - tm.width - 10, h * 0.68);
+function drawBadge(cx,text,x,y,color,fs,fw){
+    cx.font=`600 ${fs}px 'DM Sans'`;const tm=cx.measureText(text);
+    x=Math.max(5,Math.min(x,fw-tm.width-16));
+    cx.fillStyle='rgba(0,0,0,0.7)';
+    const bx=x-6,by=y-fs-2,bw=tm.width+12,bh=fs+8;
+    cx.beginPath();cx.roundRect?cx.roundRect(bx,by,bw,bh,6):cx.fillRect(bx,by,bw,bh);cx.fill();
+    cx.fillStyle=color;cx.fillText(text,x,y);
 }
 
-function drawLabel(ctx, text, x, y, color, frameW) {
-    const fontSize = Math.max(11, frameW / 50);
-    ctx.font = `500 ${fontSize}px 'DM Sans', sans-serif`;
-    const tm = ctx.measureText(text);
-    const px = 4, py = 3;
-
-    // Clamp to frame
-    x = Math.max(5, Math.min(x, frameW - tm.width - px * 2 - 5));
-
-    ctx.fillStyle = 'rgba(0,0,0,0.75)';
-    ctx.fillRect(x - px, y - fontSize - py, tm.width + px * 2, fontSize + py * 2 + 2);
-    ctx.fillStyle = color;
-    ctx.fillText(text, x, y);
+function drawHdr(cx,pos,sc,w){
+    const h=Math.max(34,w/12);cx.fillStyle='rgba(0,0,0,0.7)';cx.fillRect(0,0,w,h);
+    cx.font=`bold ${h*.48}px 'DM Sans'`;cx.fillStyle='#fff';cx.fillText(pos,10,h*.66);
+    const c=sc>=75?'#34d399':sc>=50?'#fbbf24':'#f87171';const t=`${sc}/100`;cx.fillStyle=c;cx.fillText(t,w-cx.measureText(t).width-10,h*.66);
 }
 
-function statusColor(status) {
-    if (status === 'good') return '#34d399';
-    if (status === 'warning') return '#fbbf24';
-    return '#f87171';
+function sCol(s){return s==='good'?'#34d399':s==='warn'?'#fbbf24':'#f87171'}
+
+function calcScore(results){
+    let ws=0,wt=0;const ps={};
+    for(const r of results){const s=r.pscore;ps[r.position]=s;const w=POS_W[r.position]||1;ws+=s*w;wt+=w}
+    const sc=wt>0?Math.round(ws/wt):0;
+    let hc;if(sc>=90)hc=Math.max(-2,(100-sc)*.5-2);else if(sc>=80)hc=(90-sc)*.5;else if(sc>=70)hc=5+(80-sc)*.5;else if(sc>=60)hc=10+(70-sc)*.5;else if(sc>=50)hc=15+(60-sc)*.5;else if(sc>=40)hc=20+(50-sc)*.5;else hc=25+(40-sc)*.5;
+    let g;if(sc>=90)g='Tour-caliber mechanics';else if(sc>=80)g='Strong fundamentals';else if(sc>=70)g='Solid — minor tweaks needed';else if(sc>=60)g='Good foundation to build on';else if(sc>=50)g='Key fixes will help a lot';else g='Focus on fundamentals first';
+    return{score:sc,handicap:rnd(hc),grade:g,ps};
 }
 
-// ======================== SWING SCORE ========================
-function computeSwingScore(positionResults) {
-    let weightedSum = 0, weightTotal = 0;
-    const posScores = {};
-
-    for (const r of positionResults) {
-        const ps = r.positionScore;
-        posScores[r.position] = ps;
-        const w = POS_WEIGHTS[r.position] || 1;
-        weightedSum += ps * w;
-        weightTotal += w;
-    }
-
-    const score = weightTotal > 0 ? Math.round(weightedSum / weightTotal) : 0;
-
-    let handicap;
-    if (score >= 90) handicap = Math.max(-2, (100 - score) * 0.5 - 2);
-    else if (score >= 80) handicap = (90 - score) * 0.5;
-    else if (score >= 70) handicap = 5 + (80 - score) * 0.5;
-    else if (score >= 60) handicap = 10 + (70 - score) * 0.5;
-    else if (score >= 50) handicap = 15 + (60 - score) * 0.5;
-    else if (score >= 40) handicap = 20 + (50 - score) * 0.5;
-    else handicap = 25 + (40 - score) * 0.5;
-
-    let grade;
-    if (score >= 90) grade = 'Tour-caliber mechanics';
-    else if (score >= 80) grade = 'Very strong fundamentals';
-    else if (score >= 70) grade = 'Solid mechanics, minor issues';
-    else if (score >= 60) grade = 'Good foundation, areas to improve';
-    else if (score >= 50) grade = 'Developing swing, key fixes needed';
-    else if (score >= 40) grade = 'Fundamentals need work';
-    else grade = 'Significant rebuilding needed';
-
-    return { score, handicap: Math.round(handicap * 10) / 10, grade, positionScores: posScores };
+// ===== SHOW MULTI-SWING RESULTS =====
+function showSwings(){
+    $('msr').classList.remove('hidden');$('swDetail').classList.add('hidden');
+    $('swCnt').textContent=dSwings.length+' swing'+(dSwings.length!==1?'s':'');
+    renderSL();speak(`Found ${dSwings.length} swings.`);
 }
-
-// ======================== CLAUDE API ========================
-async function getClaudeCoaching(positionResults, swingScore, launchData) {
-    const club = document.getElementById('clubSelect').value;
-
-    // Build content with images
-    const content = [];
-
-    let overview = `## Swing Analysis Request\n\n**Club:** ${club}\n**Swing Score:** ${swingScore.score}/100\n**Estimated Handicap:** ${swingScore.handicap}\n**Grade:** ${swingScore.grade}\n\n### Position Scores:\n`;
-    for (const [pos, sc] of Object.entries(swingScore.positionScores)) overview += `- ${pos}: ${sc}/100\n`;
-    content.push({ type: 'text', text: overview });
-
-    for (const r of positionResults) {
-        content.push({ type: 'text', text: `\n### ${r.position} Position:` });
-
-        // Add annotated image
-        const base64 = r.annotatedDataUrl.split(',')[1];
-        content.push({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: base64 } });
-
-        let angleText = `**Measured Angles (${r.position}):**\n`;
-        for (const [k, v] of Object.entries(r.angles)) angleText += `- ${k}: ${v}°\n`;
-        if (Object.keys(r.scores).length > 0) {
-            angleText += `\n**Scoring:**\n`;
-            for (const [k, s] of Object.entries(r.scores)) {
-                const icon = s.status === 'good' ? '✅' : s.status === 'warning' ? '⚠️' : '🔴';
-                angleText += `- ${icon} ${k}: ${s.value}° (optimal: ${s.range[0]}-${s.range[1]}°, deviation: ${s.deviation}°)\n`;
-            }
-        }
-        content.push({ type: 'text', text: angleText });
-    }
-
-    if (launchData && Object.keys(launchData).length > 0) {
-        let lmText = '\n### Launch Monitor Data:\n';
-        const labels = { ball_speed:'Ball Speed (mph)', club_speed:'Club Speed (mph)', launch_angle:'Launch Angle (°)',
-            spin_rate:'Spin Rate (rpm)', carry:'Carry (yards)', smash_factor:'Smash Factor',
-            total_distance:'Total Distance (yards)', attack_angle:'Attack Angle (°)' };
-        for (const [k, label] of Object.entries(labels)) {
-            if (launchData[k] != null) lmText += `- **${label}:** ${launchData[k]}\n`;
-        }
-        content.push({ type: 'text', text: lmText });
-    }
-
-    content.push({ type: 'text', text: '\nProvide your complete analysis following the format in your instructions. Be specific about angles and fixes.' });
-
-    const systemPrompt = `You are SwingIQ — an expert golf coach analyzing a player's swing using pose detection data and annotated swing images. Provide specific, actionable, severity-ranked feedback.
-
-Format your response in these sections:
-## 🏌️ PRO GOLFER MATCH
-Name one tour pro this swing most resembles and explain why.
-
-## 📊 POSITION-BY-POSITION ANALYSIS
-For each position: what's working (with angles), what needs work, and one specific fix.
-
-## ⚠️ SEVERITY-RANKED ISSUES
-All issues ranked by severity (1-10):
-- **Severity: X/10** — Issue name
-- What/Cause → Effect/Fix/Pro reference
-
-## 🎯 TOP 3 PRIORITIES
-Three most impactful changes with specific drills.
-
-## 📈 TRACKMAN INSIGHTS
-(Only if launch data provided) What numbers reveal about mechanics.
-
-## 🏆 SWING SCORE CONTEXT
-What the score means and how to improve 5-10 points.`;
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': appState.apiKey,
-            'anthropic-version': '2023-06-01',
-            'anthropic-dangerous-direct-browser-access': 'true',
-        },
-        body: JSON.stringify({
-            model: 'claude-sonnet-4-20250514',
-            max_tokens: 4000,
-            system: systemPrompt,
-            messages: [{ role: 'user', content }],
-        }),
-    });
-
-    if (!response.ok) {
-        const err = await response.json().catch(() => ({}));
-        throw new Error(err.error?.message || `API error ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    // Track approximate cost (Sonnet: ~$3/M input, ~$15/M output tokens)
-    const usage = data.usage || {};
-    const inputCost = (usage.input_tokens || 0) / 1000000 * 3;
-    const outputCost = (usage.output_tokens || 0) / 1000000 * 15;
-    const callCost = Math.round((inputCost + outputCost) * 100) / 100;
-    appState.totalApiCost = Math.round((appState.totalApiCost + callCost) * 100) / 100;
-    appState.coachingCount++;
-    saveState();
-
-    return data.content.map(b => b.text || '').join('\n');
-}
-
-// ======================== LAUNCH MONITOR DATA ========================
-function getLaunchData() {
-    const fields = {
-        ball_speed: 'lmBallSpeed', club_speed: 'lmClubSpeed',
-        launch_angle: 'lmLaunch', spin_rate: 'lmSpin',
-        carry: 'lmCarry', smash_factor: 'lmSmash',
-        total_distance: 'lmTotal', attack_angle: 'lmAttack',
-    };
-    const data = {};
-    for (const [key, id] of Object.entries(fields)) {
-        const val = document.getElementById(id).value;
-        if (val) data[key] = parseFloat(val);
-    }
-    return Object.keys(data).length > 0 ? data : null;
-}
-
-// ======================== DISPLAY RESULTS ========================
-function displayResults(session) {
-    document.getElementById('results').classList.remove('hidden');
-
-    // Score ring
-    const s = session.swingScore;
-    const color = s.score >= 75 ? 'var(--green)' : s.score >= 50 ? 'var(--yellow)' : 'var(--red)';
-    document.getElementById('scoreArc').setAttribute('stroke', color);
-    document.getElementById('scoreArc').setAttribute('stroke-dasharray', `${s.score}, 100`);
-    document.getElementById('rScore').textContent = s.score;
-    document.getElementById('rScore').style.color = color;
-    document.getElementById('rHandicap').textContent = s.handicap;
-    document.getElementById('rGrade').textContent = s.grade;
-
-    // Position carousel
-    const scroll = document.getElementById('posScroll');
-    scroll.innerHTML = '';
-    session.positions.forEach((pos, i) => {
-        const div = document.createElement('div');
-        div.className = 'position-thumb' + (i === 0 ? ' active' : '');
-        const sc = pos.scores ? computePositionScore(pos.scores) : 75;
-        const scColor = sc >= 75 ? 'var(--green)' : sc >= 50 ? 'var(--yellow)' : 'var(--red)';
-        div.innerHTML = `
-            <img src="${pos.imageData}" alt="${pos.position}">
-            <div class="position-thumb-info">
-                <div class="position-thumb-name">${pos.position}</div>
-                <div class="position-thumb-score" style="color:${scColor}">${sc}</div>
+function renderSL(){
+    const l=$('swList');l.innerHTML='';
+    dSwings.forEach((sw,i)=>{
+        if(sw.st==='discarded')return;
+        const sc=sw.score.score,col=sc>=75?'var(--g)':sc>=50?'var(--y)':'var(--r)';
+        const img=sw.positions.find(p=>p.position==='Impact')?.img||sw.positions[0]?.img||'';
+        const saved=sw.st==='saved';
+        // Get top verdict
+        const topV=sw.positions.flatMap(p=>p.verdicts).find(v=>v.type!=='good');
+        const verdict=topV?topV.text:'Looking good!';
+        const d=document.createElement('div');d.className='sw-card';
+        d.innerHTML=`${img?`<img src="${img}" onclick="viewSw(${i})">`:''}
+            <div class="sw-info" onclick="viewSw(${i})" style="cursor:pointer">
+                <div style="font-weight:600">Swing ${sw.idx}</div>
+                <div class="mono" style="color:${col};font-size:18px;font-weight:700">${sc}<span style="font-size:12px;color:var(--td)"> / 100</span></div>
+                <div style="font-size:12px;color:var(--td);margin-top:2px">${verdict.substring(0,45)}</div>
+            </div>
+            <div class="sw-acts">
+                <button class="btn btn-s ${saved?'btn-g':'btn-o'}" onclick="togSave(${i})" style="font-size:18px;padding:8px 12px">${saved?'✓':'+'}</button>
+                <button class="btn btn-s btn-r" onclick="disc(${i})" style="font-size:18px;padding:8px 12px">✕</button>
             </div>`;
-        div.onclick = () => {
-            scroll.querySelectorAll('.position-thumb').forEach(t => t.classList.remove('active'));
-            div.classList.add('active');
-            showPositionDetail(pos);
-        };
-        scroll.appendChild(div);
+        l.appendChild(d);
     });
-
-    // Show first position detail
-    if (session.positions.length > 0) showPositionDetail(session.positions[0]);
-
-    // Coaching — show placeholder or existing coaching
-    const coachPlaceholder = document.getElementById('coachingPlaceholder');
-    const coachLoading = document.getElementById('coachingLoading');
-    const coachDiv = document.getElementById('coachingText');
-    
-    if (session.coaching) {
-        coachPlaceholder.classList.add('hidden');
-        coachLoading.classList.add('hidden');
-        coachDiv.classList.remove('hidden');
-        try { coachDiv.innerHTML = marked.parse(session.coaching); }
-        catch { coachDiv.innerHTML = session.coaching.replace(/\n/g, '<br>'); }
-    } else {
-        coachPlaceholder.classList.remove('hidden');
-        coachLoading.classList.add('hidden');
-        coachDiv.classList.add('hidden');
-    }
-
-    // Scroll to results
-    document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+    const cnt=dSwings.filter(s=>s.st==='saved').length;
+    $('batchSec').classList.toggle('hidden',cnt===0);
+    if(cnt)$('batchBtn').textContent=`🤖 Get Coaching for ${cnt} Swing${cnt>1?'s':''}`;
 }
+function togSave(i){dSwings[i].st=dSwings[i].st==='saved'?'pending':'saved';renderSL()}
+function disc(i){dSwings[i].st='discarded';renderSL()}
+function saveAll(){dSwings.forEach(s=>{if(s.st!=='discarded')s.st='saved'});renderSL()}
+function discAll(){if(confirm('Discard all?')){dSwings.forEach(s=>s.st='discarded');renderSL()}}
 
-function showPositionDetail(pos) {
-    document.getElementById('posDetail').classList.remove('hidden');
-    document.getElementById('detailName').textContent = pos.position;
+function viewSw(i){
+    const sw=dSwings[i];$('swDetail').classList.remove('hidden');
+    $('dLabel').textContent='Swing '+sw.idx;
 
-    const sc = pos.scores ? computePositionScore(pos.scores) : 75;
-    const scEl = document.getElementById('detailScore');
-    scEl.textContent = sc + '/100';
-    scEl.style.color = sc >= 75 ? 'var(--green)' : sc >= 50 ? 'var(--yellow)' : 'var(--red)';
+    // Plain English panel
+    const ep=$('engPanel');
+    const allV=sw.positions.flatMap(p=>p.verdicts.map(v=>({...v,pos:p.position})));
+    const goods=allV.filter(v=>v.type==='good'),issues=allV.filter(v=>v.type!=='good');
+    let html=`<div style="font-weight:700;margin-bottom:10px;font-size:15px">Score: <span class="mono" style="color:${sw.score.score>=70?'var(--g)':'var(--y)'}">${sw.score.score}/100</span> · HC: ${sw.score.handicap}</div>`;
+    if(issues.length){html+='<div style="font-size:12px;color:var(--td);margin-bottom:6px">THINGS TO WORK ON</div>';issues.forEach(v=>{html+=`<div class="eng-line"><div class="eng-icon">${v.icon}</div><div><strong>${v.pos}:</strong> ${v.text}${v.fix?`<br><span class="eng-fix">→ ${v.fix}</span>`:''}</div></div>`})}
+    if(goods.length){html+=`<div style="font-size:12px;color:var(--td);margin:10px 0 6px">WHAT'S WORKING</div>`;goods.forEach(v=>{html+=`<div class="eng-line"><div class="eng-icon">✅</div><div>${v.pos}: ${v.text}</div></div>`})}
+    ep.innerHTML=html;
 
-    // Draw image to detail canvas
-    const canvas = document.getElementById('detailCanvas');
-    const img = new Image();
-    img.onload = () => {
-        canvas.width = img.width;
-        canvas.height = img.height;
-        canvas.style.height = 'auto';
-        canvas.getContext('2d').drawImage(img, 0, 0);
-    };
-    img.src = pos.imageData;
-
-    // Angle details
-    const anglesDiv = document.getElementById('detailAngles');
-    anglesDiv.innerHTML = '';
-
-    if (pos.scores) {
-        for (const [name, s] of Object.entries(pos.scores)) {
-            const icon = s.status === 'good' ? '✅' : s.status === 'warning' ? '⚠️' : '🔴';
-            anglesDiv.innerHTML += `<div class="angle-row">
-                <div class="angle-name">${icon} ${formatName(name)}</div>
-                <div><span class="angle-value" style="color:${statusColor(s.status)}">${s.value}°</span>
-                <span class="angle-range">(${s.range[0]}-${s.range[1]}°)</span></div>
-            </div>`;
-        }
-    }
-
-    if (pos.angles) {
-        for (const [name, val] of Object.entries(pos.angles)) {
-            if (!pos.scores || !pos.scores[name]) {
-                if (name.startsWith('head_') || name.startsWith('hip_center')) continue;
-                anglesDiv.innerHTML += `<div class="angle-row">
-                    <div class="angle-name" style="color:var(--text-dim)">${formatName(name)}</div>
-                    <div class="angle-value">${val}°</div>
-                </div>`;
-            }
-        }
-    }
-}
-
-function formatName(n) { return n.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase()); }
-
-// ======================== REQUEST COACHING (OPTIONAL, PAID) ========================
-async function requestCoaching() {
-    if (!currentResults) return;
-
-    const placeholder = document.getElementById('coachingPlaceholder');
-    const loading = document.getElementById('coachingLoading');
-    const coachDiv = document.getElementById('coachingText');
-
-    placeholder.classList.add('hidden');
-    loading.classList.remove('hidden');
-
-    try {
-        // Rebuild position results from saved session data for Claude
-        const positionResults = currentResults.positions.map(p => ({
-            position: p.position,
-            angles: p.angles,
-            scores: p.scores,
-            annotatedDataUrl: p.imageData,
-            poseDetected: true,
-        }));
-
-        const coachingText = await getClaudeCoaching(
-            positionResults,
-            currentResults.swingScore,
-            currentResults.launchData,
-        );
-
-        // Save coaching to session
-        currentResults.coaching = coachingText;
-        const session = appState.sessions.find(s => s.id === currentSessionId);
-        if (session) { session.coaching = coachingText; saveState(); }
-
-        // Display
-        loading.classList.add('hidden');
-        coachDiv.classList.remove('hidden');
-        try { coachDiv.innerHTML = marked.parse(coachingText); }
-        catch { coachDiv.innerHTML = coachingText.replace(/\n/g, '<br>'); }
-
-        coachDiv.scrollIntoView({ behavior: 'smooth' });
-        updateCostDisplay();
-
-    } catch(e) {
-        loading.classList.add('hidden');
-        placeholder.classList.remove('hidden');
-        alert('Coaching error: ' + e.message + '\n\nMake sure your API key is valid and you have credits.');
-    }
-}
-
-// ======================== SAVE NOTES ========================
-function saveNotes() {
-    if (!currentSessionId) return;
-    const notes = document.getElementById('sessionNotes').value;
-    const session = appState.sessions.find(s => s.id === currentSessionId);
-    if (session) { session.notes = notes; saveState(); }
-    alert('Notes saved!');
-}
-
-// ======================== HISTORY ========================
-function renderHistory() {
-    const filter = document.getElementById('histFilter').value;
-    let sessions = appState.sessions;
-    if (filter) sessions = sessions.filter(s => s.club === filter);
-
-    const list = document.getElementById('histList');
-    if (sessions.length === 0) {
-        list.innerHTML = '<p style="text-align:center; color:var(--text-dim); padding:40px 0;">No sessions yet. Analyze your first swing!</p>';
-        return;
-    }
-
-    list.innerHTML = sessions.map(s => {
-        const date = new Date(s.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-        const sc = s.swingScore?.score ?? '--';
-        const hc = s.swingScore?.handicap ?? '--';
-        const color = sc >= 75 ? 'var(--green)' : sc >= 50 ? 'var(--yellow)' : 'var(--red)';
-        const coachBadge = s.coaching ? '<span style="font-size:10px; background:var(--green-dim); color:var(--green); padding:2px 6px; border-radius:4px; margin-left:6px;">🤖 Coached</span>' : '';
-        return `<div class="card history-item" style="margin-bottom:8px;" onclick="viewHistorySession(${s.id})">
-            <div><div class="history-club">${s.club}${coachBadge}</div><div class="history-date">${date}</div></div>
-            <div style="text-align:right"><div class="history-score" style="color:${color}">${sc}</div><div class="history-hc">HC: ${hc}</div></div>
-        </div>`;
-    }).join('');
-}
-
-function viewHistorySession(id) {
-    const session = appState.sessions.find(s => s.id === id);
-    if (!session) return;
-    currentResults = session;
-    currentSessionId = id;
-    switchTab('analyze');
-    displayResults(session);
-}
-
-// ======================== PROGRESS CHARTS ========================
-let chartScore, chartHc, chartLm;
-
-function renderProgress() {
-    const filter = document.getElementById('progFilter').value;
-    let sessions = [...appState.sessions].reverse();
-    if (filter) sessions = sessions.filter(s => s.club === filter);
-
-    if (sessions.length === 0) return;
-
-    const labels = sessions.map(s => {
-        const d = new Date(s.date);
-        return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    // Position thumbs
+    const row=$('dPosRow');row.innerHTML='';
+    sw.positions.forEach((p,j)=>{
+        const ps=posScore(p.scores),pc=ps>=75?'var(--g)':ps>=50?'var(--y)':'var(--r)';
+        const d=document.createElement('div');d.className='pos-th'+(j===0?' on':'');
+        d.innerHTML=`<img src="${p.img}"><div class="pos-th-i"><span style="font-weight:500">${p.position}</span> <span class="mono" style="color:${pc};float:right">${ps}</span></div>`;
+        d.onclick=()=>{row.querySelectorAll('.pos-th').forEach(t=>t.classList.remove('on'));d.classList.add('on');showPD(p)};
+        row.appendChild(d);
     });
-
-    const chartOpts = {
-        responsive: true,
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { ticks: { color: '#6b7280', font: { size: 10 } }, grid: { color: 'rgba(255,255,255,0.05)' } },
-            y: { ticks: { color: '#6b7280' }, grid: { color: 'rgba(255,255,255,0.05)' } },
-        },
-    };
-
-    // Score
-    if (chartScore) chartScore.destroy();
-    chartScore = new Chart(document.getElementById('progScoreChart'), {
-        type: 'line',
-        data: { labels, datasets: [{ data: sessions.map(s => s.swingScore?.score), borderColor: '#34d399', backgroundColor: 'rgba(52,211,153,0.08)', fill: true, tension: 0.3, pointRadius: 4 }] },
-        options: { ...chartOpts, scales: { ...chartOpts.scales, y: { ...chartOpts.scales.y, min: 0, max: 100 } } },
-    });
-
-    // Handicap
-    if (chartHc) chartHc.destroy();
-    chartHc = new Chart(document.getElementById('progHcChart'), {
-        type: 'line',
-        data: { labels, datasets: [{ data: sessions.map(s => s.swingScore?.handicap), borderColor: '#fbbf24', backgroundColor: 'rgba(251,191,36,0.08)', fill: true, tension: 0.3, pointRadius: 4 }] },
-        options: chartOpts,
-    });
-
-    // Launch monitor
-    if (chartLm) chartLm.destroy();
-    const colors = { ball_speed: '#f87171', club_speed: '#60a5fa', carry: '#34d399', smash_factor: '#a78bfa' };
-    const dLabels = { ball_speed: 'Ball Speed', club_speed: 'Club Speed', carry: 'Carry', smash_factor: 'Smash×100' };
-    const datasets = [];
-    for (const [key, color] of Object.entries(colors)) {
-        const vals = sessions.map(s => {
-            const v = s.launchData?.[key];
-            return v != null ? (key === 'smash_factor' ? v * 100 : v) : null;
-        });
-        if (vals.some(v => v != null)) datasets.push({ label: dLabels[key], data: vals, borderColor: color, tension: 0.3, pointRadius: 3, spanGaps: true });
-    }
-    chartLm = new Chart(document.getElementById('progLmChart'), {
-        type: 'line',
-        data: { labels, datasets },
-        options: { ...chartOpts, plugins: { legend: { display: true, labels: { color: '#6b7280', font: { size: 10 } } } } },
-    });
+    if(sw.positions.length)showPD(sw.positions[0]);
+    $('swDetail').scrollIntoView({behavior:'smooth'});
 }
 
-// ======================== INIT ========================
-initApp();
+function showPD(p){
+    $('dPosCard').classList.remove('hidden');
+    const cv=$('dCanvas'),img=new Image();
+    img.onload=()=>{cv.width=img.width;cv.height=img.height;cv.style.height='auto';cv.getContext('2d').drawImage(img,0,0)};
+    img.src=p.img;
+    // Verdict badges
+    const vd=$('dVerdicts');vd.innerHTML='';
+    p.verdicts.forEach(v=>{vd.innerHTML+=`<span class="verdict v-${v.type}">${v.icon} ${v.text.split('—')[0].trim()}</span>`});
+    // Technical details
+    const ad=$('dAngles');ad.innerHTML='';
+    for(const[k,v]of Object.entries(p.angles)){if(k.startsWith('head_')||k==='hip_center_x')continue;const s=p.scores[k];const col=s?sCol(s.st):'var(--td)';ad.innerHTML+=`<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--brd)"><span>${k.replace(/_/g,' ')}</span><span class="mono" style="color:${col}">${v}°${s?` (${s.r[0]}-${s.r[1]}°)`:''}</span></div>`}
+}
+
+// ===== BATCH COACHING =====
+async function runBatch(){
+    const saved=dSwings.filter(s=>s.st==='saved');if(!saved.length)return;
+    $('batchBtn').disabled=true;$('batchBtn').textContent='🤖 Analyzing...';
+    try{
+        const txt=await callClaude(saved);
+        saved.forEach(sw=>{state.sessions.unshift({id:Date.now()+Math.random()*999,date:sw.date,club:sw.club,swingScore:sw.score,positions:sw.positions.map(p=>({position:p.position,angles:p.angles,scores:p.scores,imageData:p.img})),coaching:txt,launchData:sw.launch,notes:''})});
+        if(state.sessions.length>500)state.sessions=state.sessions.slice(0,500);save();
+        $('batchRes').classList.remove('hidden');
+        try{$('batchTxt').innerHTML=marked.parse(txt)}catch{$('batchTxt').innerHTML=txt.replace(/\n/g,'<br>')}
+        $('batchBtn').textContent='✓ Done — Swings Saved';speak('Coaching complete.');
+        $('batchRes').scrollIntoView({behavior:'smooth'});
+    }catch(e){$('batchBtn').disabled=false;$('batchBtn').textContent='🤖 Retry';alert(e.message)}
+}
+
+async function callClaude(swings){
+    const content=[];
+    let o=`## Session: ${swings.length} swings with ${swings[0].club}\n\nScores: ${swings.map(s=>`Swing ${s.idx}: ${s.score.score}`).join(', ')}\n`;
+    content.push({type:'text',text:o});
+    const sorted=[...swings].sort((a,b)=>b.score.score-a.score.score);
+    const sample=[sorted[0]];if(sorted.length>1)sample.push(sorted[sorted.length-1]);if(sorted.length>2)sample.push(sorted[Math.floor(sorted.length/2)]);
+    for(const sw of sample){
+        content.push({type:'text',text:`\n### Swing ${sw.idx} (${sw.score.score}/100):`});
+        for(const p of sw.positions){if(p.img){content.push({type:'image',source:{type:'base64',media_type:'image/jpeg',data:p.img.split(',')[1]}})}
+            let t=`**${p.position}:** `;for(const[k,v]of Object.entries(p.angles)){if(!k.startsWith('head'))t+=`${k}: ${v}° `}content.push({type:'text',text:t})}
+    }
+    if(swings[0].launch){let t='\n### Launch Data:\n';for(const[k,v]of Object.entries(swings[0].launch))t+=`${k}: ${v}\n`;content.push({type:'text',text:t})}
+    content.push({type:'text',text:'\nGive a complete session analysis. Focus on patterns, consistency, fatigue. Plain English — no jargon. Severity-rank issues. Top 3 priorities with drills.'});
+
+    const r=await fetch('https://api.anthropic.com/v1/messages',{method:'POST',headers:{'Content-Type':'application/json','x-api-key':state.key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+        body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:4000,system:'You are SwingIQ, an expert golf coach. Analyze this practice session. Use PLAIN ENGLISH — no technical jargon unless explaining. Be specific, actionable, encouraging. Format with headers and bullet points. Include: session overview, what\'s working, severity-ranked issues (1-10), top 3 priorities with drills, and what made the best swing work.',messages:[{role:'user',content}]})});
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error?.message||'API error '+r.status)}
+    return(await r.json()).content.map(b=>b.text||'').join('\n');
+}
+
+// ===== LIVE PRACTICE =====
+function toggleLive(){if(liveOn)stopLive();else startLive()}
+function startLive(){
+    if(!liveStream||!detector){alert('Camera or detector not ready');return}
+    liveOn=true;liveCnt=0;prevGray=null;mBase=0;
+    $('liveBtn').textContent='⏹ Stop';$('liveBtn').style.background='var(--r)';
+    $('liveCount').classList.remove('hidden');$('liveCount').textContent='0 swings';
+    $('liveStat').textContent='Swing when ready...';speak('Ready. Swing when you want.');
+    const vid=$('liveVid'),c=$('lCvs'),cx=c.getContext('2d');
+    liveInt=setInterval(()=>{
+        if(!liveOn)return;c.width=vid.videoWidth||640;c.height=vid.videoHeight||480;cx.drawImage(vid,0,0);
+        const g=gray(cx.getImageData(0,0,c.width,c.height));
+        if(prevGray){let m=0;const s=16;for(let i=0;i<g.length;i+=s)m+=Math.abs(g[i]-prevGray[i]);m/=(g.length/s);
+            if(!mBase)mBase=m*1.5+2;
+            if(m>mBase*3&&!cooldown){cooldown=true;setTimeout(()=>{cx.drawImage(vid,0,0);liveAnalyze(cx.getImageData(0,0,c.width,c.height),c.width,c.height);cooldown=false},800)}
+            mBase=mBase*.98+m*.02;
+        }prevGray=g;
+    },100);
+}
+function gray(d){const g=new Uint8Array(d.width*d.height);for(let i=0;i<g.length;i++){const j=i*4;g[i]=(d.data[j]*.3+d.data[j+1]*.59+d.data[j+2]*.11)|0}return g}
+async function liveAnalyze(fd,w,h){
+    liveCnt++;$('liveCount').textContent=liveCnt+' swing'+(liveCnt>1?'s':'');
+    const c=$('fCvs');c.width=w;c.height=h;c.getContext('2d').putImageData(fd,0,0);
+    try{
+        const poses=await detector.estimatePoses(c);if(!poses.length)return speak('Couldn\'t see you. Try again.');
+        const ang=calcAngles(poses[0].keypoints,w,h),sc=scorePos(ang,'Impact'),vd=getVerdicts(ang,sc,'Impact');
+        // Voice: plain English
+        const issues=vd.filter(v=>v.type!=='good');
+        let msg=`Swing ${liveCnt}. `;
+        if(!issues.length)msg+='That looked good! ';
+        else issues.forEach(v=>{msg+=v.text+'. '});
+        speak(msg);
+        // Card
+        const ac=$('aCvs');ac.width=w;ac.height=h;const ax=ac.getContext('2d');ax.putImageData(fd,0,0);
+        drawVisual(ax,poses[0].keypoints,ang,sc,'Impact',w,h);drawHdr(ax,'Swing '+liveCnt,posScore(sc),w);
+        const card=document.createElement('div');card.className='sw-card fade';
+        card.innerHTML=`<img src="${ac.toDataURL('image/jpeg',.7)}"><div class="sw-info"><div style="font-weight:600">Swing ${liveCnt}</div><div style="font-size:12px;color:var(--td)">${issues.length?issues[0].text:'Looking good!'}</div></div>`;
+        $('liveCards').insertBefore(card,$('liveCards').firstChild);
+    }catch(e){console.error(e)}
+}
+function stopLive(){liveOn=false;if(liveInt){clearInterval(liveInt);liveInt=null}$('liveBtn').textContent='▶ Start';$('liveBtn').style.background='';$('liveStat').textContent='Session complete.';if(liveCnt)speak(`Done. ${liveCnt} swings.`)}
+
+// ===== LAUNCH DATA =====
+function getLM(){const f={ball_speed:'lmBS',club_speed:'lmCS',launch_angle:'lmLA',spin_rate:'lmSR',carry:'lmCY',smash_factor:'lmSF',total_distance:'lmTD',attack_angle:'lmAA'};const d={};for(const[k,id]of Object.entries(f)){const v=$(id).value;if(v)d[k]=parseFloat(v)}return Object.keys(d).length?d:null}
+
+// ===== HISTORY =====
+function renderHist(){
+    const f=$('hFilt').value;let s=state.sessions;if(f)s=s.filter(x=>x.club===f);
+    $('hList').innerHTML=s.length?s.map(x=>{const d=new Date(x.date).toLocaleDateString('en-US',{month:'short',day:'numeric'});const sc=x.swingScore?.score??'--';const col=sc>=75?'var(--g)':sc>=50?'var(--y)':'var(--r)';
+        return`<div class="card" style="display:flex;justify-content:space-between;align-items:center;padding:16px;cursor:pointer"><div><div style="font-weight:600">${x.club}</div><div style="font-size:12px;color:var(--td)">${d}</div></div><div style="text-align:right"><div class="mono" style="color:${col};font-size:20px;font-weight:700">${sc}</div><div style="font-size:12px;color:var(--td)">HC: ${x.swingScore?.handicap??'--'}</div></div></div>`}).join(''):'<p style="text-align:center;color:var(--td);padding:40px">No sessions yet.</p>';
+}
+
+// ===== PROGRESS =====
+let cS,cH,cL;
+function renderProg(){
+    const f=$('pFilt').value;let s=[...state.sessions].reverse();if(f)s=s.filter(x=>x.club===f);if(!s.length)return;
+    const lb=s.map(x=>new Date(x.date).toLocaleDateString('en-US',{month:'short',day:'numeric'}));
+    const o={responsive:true,plugins:{legend:{display:false}},scales:{x:{ticks:{color:'#6b7280',font:{size:10}},grid:{color:'rgba(255,255,255,.04)'}},y:{ticks:{color:'#6b7280'},grid:{color:'rgba(255,255,255,.04)'}}}};
+    if(cS)cS.destroy();cS=new Chart($('pSc'),{type:'line',data:{labels:lb,datasets:[{data:s.map(x=>x.swingScore?.score),borderColor:'#34d399',backgroundColor:'rgba(52,211,153,.06)',fill:true,tension:.3,pointRadius:3}]},options:{...o,scales:{...o.scales,y:{...o.scales.y,min:0,max:100}}}});
+    if(cH)cH.destroy();cH=new Chart($('pHc'),{type:'line',data:{labels:lb,datasets:[{data:s.map(x=>x.swingScore?.handicap),borderColor:'#fbbf24',backgroundColor:'rgba(251,191,36,.06)',fill:true,tension:.3,pointRadius:3}]},options:o});
+    if(cL)cL.destroy();const cs={ball_speed:'#f87171',club_speed:'#60a5fa',carry:'#34d399'};const dl={ball_speed:'Ball Spd',club_speed:'Club Spd',carry:'Carry'};const ds=[];
+    for(const[k,c]of Object.entries(cs)){const v=s.map(x=>x.launchData?.[k]??null);if(v.some(x=>x!=null))ds.push({label:dl[k],data:v,borderColor:c,tension:.3,pointRadius:2,spanGaps:true})}
+    cL=new Chart($('pLm'),{type:'line',data:{labels:lb,datasets:ds},options:{...o,plugins:{legend:{display:true,labels:{color:'#6b7280',font:{size:10}}}}}});
+}
 </script>
 </body>
 </html>
